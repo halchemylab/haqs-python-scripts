@@ -1,6 +1,25 @@
 import random
 import csv
 
+ERA_MAPPINGS = {
+    'e': 'Eastern',
+    'r': 'Roman',
+    'a': 'Renaissance',
+    'g': 'Greek'
+}
+
+def match_era(user_input):
+    if not user_input:
+        return None
+    user_input = user_input.lower()
+    # Exact match in mappings
+    if user_input in ERA_MAPPINGS:
+        return ERA_MAPPINGS[user_input]
+    # Full name match
+    for full_name in ERA_MAPPINGS.values():
+        if user_input == full_name.lower():
+            return full_name
+    return None
 
 def load_quotes(filename="quotes.csv"):
     quotes = []
@@ -25,6 +44,15 @@ def display_random_quote(quotes, era=None):
 
 if __name__ == "__main__":
     print("Welcome to the Philosophy Quotes Generator!")
-    era_input = input("Enter an era to filter by (Eastern, Roman, Renaissance, Greek) or press Enter for random: ")
+    print("Quick inputs: 'e' (Eastern), 'r' (Roman), 'a' (Renaissance), 'g' (Greek)")
     quotes = load_quotes()
-    display_random_quote(quotes, era_input if era_input else None)
+    
+    while True:
+        era_input = input("Enter era (or press Enter for random): ")
+        matched_era = match_era(era_input)
+        display_random_quote(quotes, matched_era)
+        
+        continue_choice = input("Would you like another quote? (Y/N): ").lower()
+        if continue_choice != 'y':
+            print("Goodbye!")
+            break
