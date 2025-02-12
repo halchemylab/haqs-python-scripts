@@ -1,6 +1,8 @@
 import speedtest
 from tqdm import tqdm
 import time
+import csv
+from datetime import datetime
 
 def test_internet_speed():
     print("Testing your internet speed, please wait...")
@@ -29,10 +31,31 @@ def test_internet_speed():
         ping = st.results.ping
         pbar.update(5)   # Final progress update
 
+    # Display results
     print(f"\nYour Internet Speed Results:")
     print(f"Download Speed: {download_speed:.2f} Mbps")
     print(f"Upload Speed: {upload_speed:.2f} Mbps")
     print(f"Ping: {ping:.2f} ms")
+
+    # Log results to CSV file
+    log_results(download_speed, upload_speed, ping)
+
+def log_results(download_speed, upload_speed, ping):
+    filename = "log.csv"
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Check if file exists and write header if not
+    try:
+        with open(filename, 'x', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["Timestamp", "Download Speed (Mbps)", "Upload Speed (Mbps)", "Ping (ms)"])
+    except FileExistsError:
+        pass  # File already exists
+
+    # Append the results
+    with open(filename, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([now, f"{download_speed:.2f}", f"{upload_speed:.2f}", f"{ping:.2f}"])
 
 if __name__ == "__main__":
     test_internet_speed()
