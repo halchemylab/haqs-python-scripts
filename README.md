@@ -1,1 +1,1 @@
-# Bunch of python scripts I use in my workflow
+Python scripts I use in my workflow
