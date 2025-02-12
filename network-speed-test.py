@@ -41,7 +41,7 @@ def test_internet_speed():
     log_results(download_speed, upload_speed, ping)
 
 def log_results(download_speed, upload_speed, ping):
-    filename = "log.csv"
+    filename = "network_log.csv"
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # Check if file exists and write header if not
