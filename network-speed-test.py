@@ -9,7 +9,7 @@ from openai import OpenAI
 
 def get_optimization_suggestions(download_speed, upload_speed, ping):
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-    prompt = f"My internet speed is {download_speed:.2f} Mbps download, {upload_speed:.2f} Mbps upload, and {ping:.2f} ms ping. What are some suggestions to optimize my internet connection? Give me 2 concise suggestions."
+    prompt = f"My internet speed is {download_speed:.2f} Mbps download, {upload_speed:.2f} Mbps upload, and {ping:.2f} ms ping. First, evaluate if the connection is good or not. Second, What are some suggestions to optimize my internet connection? Give me 2 concise suggestions."
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
