@@ -55,7 +55,7 @@ def test_internet_speed():
 
     # Get and display optimization suggestions
     suggestions = get_optimization_suggestions(download_speed, upload_speed, ping)
-    print("\nOptimization Suggestions:")
+    print("\nAI Suggestions:")
     print(suggestions)
 
     # Log results to CSV file
