@@ -3,6 +3,22 @@ from tqdm import tqdm
 import time
 import csv
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+def get_optimization_suggestions(download_speed, upload_speed, ping):
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    prompt = f"My internet speed is {download_speed:.2f} Mbps download, {upload_speed:.2f} Mbps upload, and {ping:.2f} ms ping. What are some suggestions to optimize my internet connection? Give me 2 concise suggestions."
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant that provides internet optimization tips."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return response.choices[0].message.content.strip()
 
 def test_internet_speed():
     print("Testing your internet speed, please wait...")
@@ -37,6 +53,11 @@ def test_internet_speed():
     print(f"Upload Speed: {upload_speed:.2f} Mbps")
     print(f"Ping: {ping:.2f} ms")
 
+    # Get and display optimization suggestions
+    suggestions = get_optimization_suggestions(download_speed, upload_speed, ping)
+    print("\nOptimization Suggestions:")
+    print(suggestions)
+
     # Log results to CSV file
     log_results(download_speed, upload_speed, ping)
 
@@ -58,4 +79,5 @@ def log_results(download_speed, upload_speed, ping):
         writer.writerow([now, f"{download_speed:.2f}", f"{upload_speed:.2f}", f"{ping:.2f}"])
 
 if __name__ == "__main__":
+    load_dotenv()
     test_internet_speed()
