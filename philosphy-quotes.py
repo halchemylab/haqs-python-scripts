@@ -1,5 +1,8 @@
 import random
 import csv
+from dotenv import load_dotenv
+import os
+from openai import OpenAI
 
 ERA_MAPPINGS = {
     'e': 'Eastern',
@@ -29,6 +32,16 @@ def load_quotes(filename="quotes.csv"):
             quotes.append(row)
     return quotes
 
+def get_ai_explanation(quote, author):
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are an assistant that explains quotes."},
+            {"role": "user", "content": f"Can you explain this quote: '{quote}' by {author} in 2 condensed sentences max?"}
+        ]
+    )
+    return response.choices[0].message.content.strip()
 
 def display_random_quote(quotes, era=None):
     filtered_quotes = [q for q in quotes if era is None or q["era"].lower() == era.lower()]
@@ -39,10 +52,15 @@ def display_random_quote(quotes, era=None):
     selected_quote = random.choice(filtered_quotes)
     print()  # Add empty line before quote
     print(f'"{selected_quote["quote"]}"\n- {selected_quote["author"]} ({selected_quote["era"]})')
-    print()  # Add empty line after quote
-
+    
+    # Get and display AI explanation
+    explanation = get_ai_explanation(selected_quote["quote"], selected_quote["author"])
+    print("\nAI Explanation:")
+    print(explanation)
+    print()  # Add empty line after explanation
 
 if __name__ == "__main__":
+    load_dotenv()  # Load environment variables
     print("Welcome to the Philosophy Quotes Generator!")
     print("Quick inputs: 'e' (Eastern), 'r' (Roman), 'a' (Renaissance), 'g' (Greek)")
     quotes = load_quotes()
