@@ -3,6 +3,7 @@ import sys
 from tqdm import tqdm
 
 def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User"):
+    total_sessions = 0
     for cycle in range(1, cycles + 1):
         print(f"\nCycle {cycle} of {cycles}")
         
@@ -22,6 +23,8 @@ def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User
                 continue
         else:
             print(f"\nAll Pomodoro cycles completed! Great job, {user_name}! 🎉")
+        total_sessions += 1
+        track_achievements(total_sessions)
 
 
 def countdown(duration):
@@ -52,6 +55,17 @@ def skip_check():
                 return True
     return False
 
+def track_achievements(total_sessions):
+    achievements = {
+        5: "🥉 Bronze Tomato: Complete 5 sessions",
+        10: "🥈 Silver Tomato: Complete 10 sessions",
+        20: "🥇 Gold Tomato: Complete 20 sessions",
+        50: "👑 Pomodoro Master: Complete 50 sessions"
+    }
+    
+    for sessions, message in achievements.items():
+        if total_sessions == sessions:
+            print(f"\n🎉 Achievement Unlocked! {message}")
 
 if __name__ == "__main__":
     print("Welcome to the Pomodoro Timer!")
