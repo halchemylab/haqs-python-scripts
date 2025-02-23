@@ -1,6 +1,7 @@
 import time
 import sys
 from tqdm import tqdm
+import sqlite3
 
 def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User"):
     total_sessions = 0
@@ -24,7 +25,7 @@ def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User
         else:
             print(f"\nAll Pomodoro cycles completed! Great job, {user_name}! 🎉")
         total_sessions += 1
-        track_achievements(total_sessions)
+        track_achievements(user_name, total_sessions)
 
 
 def countdown(duration):
@@ -55,7 +56,18 @@ def skip_check():
                 return True
     return False
 
-def track_achievements(total_sessions):
+def track_achievements(user_name, total_sessions):
+    conn = sqlite3.connect('pomodoro_achievements.db')
+    cursor = conn.cursor()
+
+    # Create table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS achievements (
+            user_name TEXT,
+            achievement TEXT
+        )
+    ''')
+
     achievements = {
         5: "🥉 Bronze Tomato: Complete 5 sessions",
         10: "🥈 Silver Tomato: Complete 10 sessions",
@@ -65,7 +77,11 @@ def track_achievements(total_sessions):
     
     for sessions, message in achievements.items():
         if total_sessions == sessions:
-            print(f"\n🎉 Achievement Unlocked! {message}")
+            print(f"\n🎉 Achievement Unlocked for {user_name}! {message}")
+            cursor.execute("INSERT INTO achievements (user_name, achievement) VALUES (?, ?)", (user_name, message))
+            conn.commit()
+
+    conn.close()
 
 if __name__ == "__main__":
     print("Welcome to the Pomodoro Timer!")
