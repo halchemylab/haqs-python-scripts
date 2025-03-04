@@ -65,7 +65,7 @@ def get_reading(question, cards):
     )
     try:
         response = openai.chat.completions.create( #Change here
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a tarot card reader that provides supportive, concise, and easy-to-understand readings."},
                 {"role": "user", "content": prompt}
