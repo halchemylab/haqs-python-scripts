@@ -2,6 +2,7 @@ import random
 import os
 import openai
 import time
+from dotenv import load_dotenv #Add this line
 
 # Set your OpenAI API key here or ensure it's set as the environment variable "OPENAI_API_KEY"
 openai.api_key = os.getenv("OPENAI_API_KEY")
