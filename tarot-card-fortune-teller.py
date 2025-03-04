@@ -46,7 +46,7 @@ progress_pairs = ORIGINAL_PROGRESS_PAIRS.copy()
 
 def get_progress_pair():
     """Return a random progress pair and remove it from the global list.
-       Reset the list when all pairs have been used."""
+        Reset the list when all pairs have been used."""
     global progress_pairs
     if not progress_pairs:
         progress_pairs = ORIGINAL_PROGRESS_PAIRS.copy()
@@ -64,7 +64,7 @@ def get_reading(question, cards):
         "Please provide a fun, insightful, and easy-to-understand tarot reading that interprets these cards."
     )
     try:
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create( #Change here
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a tarot card reader that provides supportive, concise, and easy-to-understand readings."},
@@ -73,7 +73,7 @@ def get_reading(question, cards):
             max_tokens=150,
             temperature=0.7
         )
-        reading = response['choices'][0]['message']['content'].strip()
+        reading = response.choices[0].message.content.strip() #Change here
     except Exception as e:
         reading = f"Error generating reading: {e}"
     return reading
@@ -92,32 +92,32 @@ def main():
             print("Invalid choice. Please select 1, 2, or 3.")
             continue
         selected_question = sample_questions[int(user_choice)-1]
-        
+
         # Draw 3 random tarot cards with pauses between each card
         drawn_cards = random.sample(tarot_cards, 3)
         print("\nDrawing 3 cards...")
         for card in drawn_cards:
             print(f"- {card}")
             time.sleep(1)  # pause 1 second between each card
- 
+
         time.sleep(2)
-        
+
         # Pick a progress pair randomly (without repeating until all have been used)
         interpret_msg, consult_msg = get_progress_pair()
         print(interpret_msg)
         time.sleep(2)
         print(consult_msg)
         time.sleep(2)
-        
+
         # Get the tarot reading from OpenAI
         reading = get_reading(selected_question, drawn_cards)
         print("\nYour Tarot Reading:")
         print(reading)
-        
+
         # Ask if the user wants another reading
         again = input("\nWould you like another reading? (y/n): ").strip().lower()
         if again != 'y':
-            print("Thank you for using the Terminal Tarot Reading App. Wishing you positive vibes!")
+            print("Thank you for using the Terminal Tarot Reading App.")
             break
 
 if __name__ == "__main__":
