@@ -68,16 +68,16 @@ def get_reading(question, cards):
         "Please provide a fun, insightful, and easy-to-understand tarot reading that interprets these cards."
     )
     try:
-        response = openai.chat.completions.create( #Change here
+        response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a tarot card reader that provides supportive, concise, and easy-to-understand readings in 3 sentences."},
+                {"role": "system", "content": "You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Focus specifically on answering the user's question using the symbolism of the drawn cards. Provide interpretations that are both meaningful and practical. In 3 sentences or less."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=150,
             temperature=0.7
         )
-        reading = response.choices[0].message.content.strip() #Change here
+        reading = response.choices[0].message.content.strip()
     except Exception as e:
         reading = f"Error generating reading: {e}"
     return reading
