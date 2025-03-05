@@ -2,6 +2,7 @@ import random
 import csv
 from dotenv import load_dotenv
 import os
+import time
 from openai import OpenAI
 
 ERA_MAPPINGS = {
@@ -10,6 +11,46 @@ ERA_MAPPINGS = {
     'a': 'Renaissance',
     'g': 'Greek'
 }
+
+SEARCH_MESSAGES = [
+    "Searching ancient scrolls...",
+    "Finding the right quote for you...",
+    "Looking through thousands of years of wisdom...",
+    "Consulting the great thinkers...",
+    "Exploring philosophical depths...",
+    "Diving into the archives of wisdom...",
+    "Dusting off ancient manuscripts...",
+    "Gathering timeless insights...",
+    "Seeking profound thoughts...",
+    "Unveiling philosophical treasures..."
+]
+
+INTERPRETATION_MESSAGES = [
+    "Deciphering the meaning...",
+    "Understanding the wisdom...",
+    "Contemplating the depths...",
+    "Analyzing the insight...",
+    "Extracting the essence...",
+    "Interpreting the message...",
+    "Unraveling the philosophy...",
+    "Processing the wisdom...",
+    "Reflecting on meaning...",
+    "Discovering hidden insights..."
+]
+
+# Keep track of used messages
+used_search_messages = []
+used_interpretation_messages = []
+
+def get_random_message(message_list, used_messages):
+    """Get a random message and track usage"""
+    if not message_list or len(used_messages) >= len(message_list):
+        used_messages.clear()
+    
+    available_messages = [m for m in message_list if m not in used_messages]
+    message = random.choice(available_messages)
+    used_messages.append(message)
+    return message
 
 def match_era(user_input):
     if not user_input:
@@ -50,8 +91,18 @@ def display_random_quote(quotes, era=None):
         return
 
     selected_quote = random.choice(filtered_quotes)
-    print()  # Add empty line before quote
-    print(f'"{selected_quote["quote"]}"\n- {selected_quote["author"]} ({selected_quote["era"]})')
+    
+    # Display first progress message and wait
+    print(f"\n{get_random_message(SEARCH_MESSAGES, used_search_messages)}")
+    time.sleep(2)
+    
+    # Display the quote
+    print(f'\n"{selected_quote["quote"]}"\n- {selected_quote["author"]} ({selected_quote["era"]})')
+    time.sleep(1)
+    
+    # Display second progress message and wait
+    print(f"\n{get_random_message(INTERPRETATION_MESSAGES, used_interpretation_messages)}")
+    time.sleep(1)
     
     # Get and display AI explanation
     explanation = get_ai_explanation(selected_quote["quote"], selected_quote["author"])
