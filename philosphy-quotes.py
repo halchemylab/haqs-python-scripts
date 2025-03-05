@@ -90,23 +90,28 @@ def display_random_quote(quotes, era=None):
         print(f"No quotes found for era: {era}")
         return
 
+    time.sleep(1)
     selected_quote = random.choice(filtered_quotes)
     
     # Display first progress message and wait
     print(f"\n{get_random_message(SEARCH_MESSAGES, used_search_messages)}")
-    time.sleep(2)
+    time.sleep(3)
     
     # Display the quote
     print(f'\n"{selected_quote["quote"]}"\n- {selected_quote["author"]} ({selected_quote["era"]})')
-    time.sleep(1)
+    time.sleep(2)
     
-    # Display second progress message and wait
-    print(f"\n{get_random_message(INTERPRETATION_MESSAGES, used_interpretation_messages)}")
-    time.sleep(1)
+    # Display second progress messages and wait - get two different messages
+    first_msg = get_random_message(INTERPRETATION_MESSAGES, used_interpretation_messages)
+    second_msg = get_random_message(INTERPRETATION_MESSAGES, used_interpretation_messages)
+    print(f"\n{first_msg}")
+    time.sleep(2)
+    print(f"{second_msg}")  # No newline before second message
+    time.sleep(2)
     
     # Get and display AI explanation
     explanation = get_ai_explanation(selected_quote["quote"], selected_quote["author"])
-    print("\nAI Explanation:")
+    print()
     print(explanation)
     print()  # Add empty line after explanation
 
