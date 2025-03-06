@@ -119,8 +119,8 @@ def main():
         print(reading)
 
         # Ask if the user wants another reading
-        again = input("\nWould you like another reading? (y/n): ").strip().lower()
-        if again != 'y':
+        again = input("\nWould you like another reading? (Y/N): ").strip().lower()
+        if again != 'Y':
             print("Thank you for using the Terminal Tarot Reading App.")
             break
 
