@@ -99,7 +99,7 @@ def display_random_quote(quotes, era=None):
     
     # Display the quote
     print(f'\n"{selected_quote["quote"]}"\n- {selected_quote["author"]} ({selected_quote["era"]})')
-    time.sleep(2)
+    time.sleep(4)
     
     # Display second progress messages and wait - get two different messages
     first_msg = get_random_message(INTERPRETATION_MESSAGES, used_interpretation_messages)
