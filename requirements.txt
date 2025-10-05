@@ -2,3 +2,4 @@ speedtest-cli
 tqdm
 python-dotenv
 openai
+asciichartpy

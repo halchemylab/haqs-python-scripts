@@ -6,6 +6,8 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+import argparse
+import asciichartpy as asciichart
 
 def get_optimization_suggestions(download_speed, upload_speed, ping):
     try:
@@ -79,6 +81,56 @@ def log_results(download_speed, upload_speed, ping):
             writer.writerow(["Timestamp", "Download Speed (Mbps)", "Upload Speed (Mbps)", "Ping (ms)"])
         writer.writerow([now, f"{download_speed:.2f}", f"{upload_speed:.2f}", f"{ping:.2f}"])
 
+def show_history():
+    """Reads the network log and displays a historical graph of speeds."""
+    filename = "network_log.csv"
+    if not os.path.exists(filename):
+        print("No history log found. Run a speed test first.")
+        return
+
+    timestamps = []
+    downloads = []
+    uploads = []
+
+    with open(filename, 'r') as csvfile:
+        reader = csv.reader(csvfile)
+        try:
+            header = next(reader) # Skip header
+        except StopIteration:
+            print("No data in history log yet.")
+            return
+            
+        for row in reader:
+            try:
+                timestamps.append(row[0])
+                downloads.append(float(row[1]))
+                uploads.append(float(row[2]))
+            except (ValueError, IndexError):
+                print(f"Skipping malformed row: {row}")
+                continue
+
+    if not downloads:
+        print("No data in history log yet.")
+        return
+
+    print("Historical Network Speeds (last 30 entries):")
+    # Only show the last 30 entries to keep the graph readable
+    downloads_recent = downloads[-30:]
+    uploads_recent = uploads[-30:]
+    
+    print("\nDownload Speed (Mbps):")
+    print(asciichart.plot(downloads_recent, {'height': 10}))
+    print("\nUpload Speed (Mbps):")
+    print(asciichart.plot(uploads_recent, {'height': 10}))
+
 if __name__ == "__main__":
     load_dotenv()
-    test_internet_speed()
+    
+    parser = argparse.ArgumentParser(description="Test internet speed and get AI optimization suggestions.")
+    parser.add_argument("--history", action="store_true", help="Show a graph of historical speed data.")
+    args = parser.parse_args()
+
+    if args.history:
+        show_history()
+    else:
+        test_internet_speed()
