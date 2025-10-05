@@ -8,6 +8,26 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import argparse
 import asciichartpy as asciichart
+import requests
+
+def display_ip_details():
+    """Fetches and displays public IP and geolocation details."""
+    try:
+        print("Fetching your public IP details...")
+        response = requests.get("https://ipinfo.io/json")
+        response.raise_for_status()  # Raise an exception for bad status codes
+        data = response.json()
+        
+        print("\nYour Public IP Information:")
+        print(f"  IP Address: {data.get('ip')}")
+        print(f"  ISP: {data.get('org')}")
+        print(f"  Location: {data.get('city')}, {data.get('region')}, {data.get('country')}")
+        print("-" * 30)
+
+    except requests.exceptions.RequestException as e:
+        print(f"\nCould not fetch IP details: {e}")
+    except Exception as e:
+        print(f"\nAn unexpected error occurred while fetching IP details: {e}")
 
 def get_optimization_suggestions(download_speed, upload_speed, ping):
     try:
@@ -29,7 +49,8 @@ def get_optimization_suggestions(download_speed, upload_speed, ping):
         return f"Could not get AI suggestions. Error: {e}"
 
 def test_internet_speed():
-    print("Testing your internet speed, please wait...")
+    display_ip_details()
+    print("\nTesting your internet speed, please wait...")
     try:
         # Initialize the progress bar
         with tqdm(total=100, desc="Running Tests", bar_format='{l_bar}{bar} [ time left: {remaining} ]') as pbar:
