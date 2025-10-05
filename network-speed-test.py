@@ -1,3 +1,14 @@
+import sys
+if sys.platform == "win32":
+    # Set the console encoding to UTF-8 to support box-drawing characters
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except TypeError:
+        # In some environments, reconfigure is not available.
+        # As a fallback, change the console code page.
+        import os
+        os.system("chcp 65001 > nul")
+
 import speedtest
 from tqdm import tqdm
 import time
