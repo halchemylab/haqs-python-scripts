@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 from plyer import notification
 
-def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User"):
+def pomodoro_timer(work_duration=25, break_duration=5, long_break_duration=15, cycles=4, long_break_interval=4, user_name="User"):
     total_sessions = get_user_session_count(user_name)
     print(f"Welcome back, {user_name}! You have completed {total_sessions} sessions so far.")
 
@@ -18,19 +18,34 @@ def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User
         if countdown(work_duration * 60):
             total_sessions += 1
             track_achievements(user_name, total_sessions)
-            notification.notify(
-                title='Pomodoro Timer',
-                message=f'Work session is over! Time for a {break_duration}-minute break.',
-            )
+            
+            if cycle % long_break_interval == 0:
+                notification.notify(
+                    title='Pomodoro Timer',
+                    message=f'Work session is over! Time for a long {long_break_duration}-minute break.',
+                )
+            else:
+                notification.notify(
+                    title='Pomodoro Timer',
+                    message=f'Work session is over! Time for a {break_duration}-minute break.',
+                )
 
         if cycle < cycles:
             # Break Session
-            print(f"Break time! Relax a bit, {user_name}. ☕ (Press 's' to skip, 'p' to pause)")
-            if countdown(break_duration * 60):
-                notification.notify(
-                    title='Pomodoro Timer',
-                    message='Break is over! Time to get back to work.',
-                )
+            if cycle % long_break_interval == 0:
+                print(f"Long break time! Relax and recharge, {user_name}. ☕ (Press 's' to skip, 'p' to pause)")
+                if countdown(long_break_duration * 60):
+                    notification.notify(
+                        title='Pomodoro Timer',
+                        message='Long break is over! Time to get back to work.',
+                    )
+            else:
+                print(f"Break time! Relax a bit, {user_name}. ☕ (Press 's' to skip, 'p' to pause)")
+                if countdown(break_duration * 60):
+                    notification.notify(
+                        title='Pomodoro Timer',
+                        message='Break is over! Time to get back to work.',
+                    )
         else:
             print(f"\nAll Pomodoro cycles completed! Great job, {user_name}! 🎉")
             notification.notify(
@@ -134,7 +149,9 @@ if __name__ == "__main__":
     print("Welcome to the Pomodoro Timer!")
     user_name = input("Enter your name: ") or "User"
     work_minutes = get_integer_input("Enter work duration in minutes (default 25): ", 25)
-    break_minutes = get_integer_input("Enter break duration in minutes (default 5): ", 5)
-    total_cycles = get_integer_input("Enter number of cycles (default 2): ", 2)
+    break_minutes = get_integer_input("Enter short break duration in minutes (default 5): ", 5)
+    long_break_minutes = get_integer_input("Enter long break duration in minutes (default 15): ", 15)
+    total_cycles = get_integer_input("Enter number of cycles (default 4): ", 4)
+    long_break_interval = get_integer_input("Enter long break interval (default 4 cycles): ", 4)
 
-    pomodoro_timer(work_minutes, break_minutes, total_cycles, user_name)
+    pomodoro_timer(work_minutes, break_minutes, long_break_minutes, total_cycles, long_break_interval, user_name)
