@@ -9,17 +9,17 @@ def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User
         print(f"\nCycle {cycle} of {cycles}")
         
         # Work Session
-        print(f"Work time! Stay focused, {user_name}! 🍅 (Press 's' to skip)")
+        print(f"Work time! Stay focused, {user_name}! 🍅 (Press 's' to skip, 'p' to pause)")
         if not countdown(work_duration * 60):
             if cycle < cycles:
-                print(f"Break time! Relax a bit, {user_name}. ☕ (Press 's' to skip)")
+                print(f"Break time! Relax a bit, {user_name}. ☕ (Press 's' to skip, 'p' to pause)")
                 if not countdown(break_duration * 60):
                     continue
             continue
 
         if cycle < cycles:
             # Break Session
-            print(f"Break time! Relax a bit, {user_name}. ☕ (Press 's' to skip)")
+            print(f"Break time! Relax a bit, {user_name}. ☕ (Press 's' to skip, 'p' to pause)")
             if not countdown(break_duration * 60):
                 continue
         else:
@@ -29,32 +29,52 @@ def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User
 
 
 def countdown(duration):
+    paused = False
     with tqdm(total=duration, desc="Time Remaining", bar_format='{l_bar}{bar} | {remaining}') as pbar:
         for remaining in range(duration, 0, -1):
+            while paused:
+                time.sleep(0.1)
+                user_input = handle_input()
+                if user_input == 'pause':
+                    paused = False
+                    pbar.set_description("Time Remaining")
+                    pbar.refresh()
+            
             time.sleep(1)
             pbar.update(1)
-            if skip_check():
+            
+            user_input = handle_input()
+            if user_input == 'skip':
                 pbar.close()
                 print("\nSession skipped!")
                 return False
+            elif user_input == 'pause':
+                paused = True
+                pbar.set_description("Time Remaining [PAUSED]")
+                pbar.refresh()
+
     print("\nTime's up!")
     return True
 
 
-def skip_check():
+def handle_input():
     if sys.platform.startswith('win'):
         import msvcrt
         if msvcrt.kbhit():
             key = msvcrt.getch().decode('utf-8').lower()
             if key == 's':
-                return True
+                return 'skip'
+            elif key == 'p':
+                return 'pause'
     else:
         import select
         if select.select([sys.stdin], [], [], 0)[0]:
             key = sys.stdin.read(1).lower()
             if key == 's':
-                return True
-    return False
+                return 'skip'
+            elif key == 'p':
+                return 'pause'
+    return None
 
 def track_achievements(user_name, total_sessions):
     conn = sqlite3.connect('pomodoro_achievements.db')
