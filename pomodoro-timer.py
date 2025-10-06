@@ -83,11 +83,21 @@ def track_achievements(user_name, total_sessions):
 
     conn.close()
 
+def get_integer_input(prompt, default):
+    while True:
+        user_input = input(prompt)
+        if not user_input:
+            return default
+        try:
+            return int(user_input)
+        except ValueError:
+            print("Invalid input. Please enter a whole number.")
+
 if __name__ == "__main__":
     print("Welcome to the Pomodoro Timer!")
     user_name = input("Enter your name: ") or "User"
-    work_minutes = int(input("Enter work duration in minutes (default 25): ") or 25)
-    break_minutes = int(input("Enter break duration in minutes (default 5): ") or 5)
-    total_cycles = int(input("Enter number of cycles (default 2): ") or 2)
+    work_minutes = get_integer_input("Enter work duration in minutes (default 25): ", 25)
+    break_minutes = get_integer_input("Enter break duration in minutes (default 5): ", 5)
+    total_cycles = get_integer_input("Enter number of cycles (default 2): ", 2)
 
     pomodoro_timer(work_minutes, break_minutes, total_cycles, user_name)
