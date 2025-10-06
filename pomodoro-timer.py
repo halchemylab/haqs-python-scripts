@@ -2,6 +2,7 @@ import time
 import sys
 from tqdm import tqdm
 import sqlite3
+from plyer import notification
 
 def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User"):
     total_sessions = 0
@@ -10,20 +11,26 @@ def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User
         
         # Work Session
         print(f"Work time! Stay focused, {user_name}! 🍅 (Press 's' to skip, 'p' to pause)")
-        if not countdown(work_duration * 60):
-            if cycle < cycles:
-                print(f"Break time! Relax a bit, {user_name}. ☕ (Press 's' to skip, 'p' to pause)")
-                if not countdown(break_duration * 60):
-                    continue
-            continue
+        if countdown(work_duration * 60):
+            notification.notify(
+                title='Pomodoro Timer',
+                message=f'Work session is over! Time for a {break_duration}-minute break.',
+            )
 
         if cycle < cycles:
             # Break Session
             print(f"Break time! Relax a bit, {user_name}. ☕ (Press 's' to skip, 'p' to pause)")
-            if not countdown(break_duration * 60):
-                continue
+            if countdown(break_duration * 60):
+                notification.notify(
+                    title='Pomodoro Timer',
+                    message='Break is over! Time to get back to work.',
+                )
         else:
             print(f"\nAll Pomodoro cycles completed! Great job, {user_name}! 🎉")
+            notification.notify(
+                title='Pomodoro Timer',
+                message=f'All {cycles} pomodoro cycles completed! Great job!',
+            )
         total_sessions += 1
         track_achievements(user_name, total_sessions)
 

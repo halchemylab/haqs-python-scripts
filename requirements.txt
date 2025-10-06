@@ -4,3 +4,4 @@ python-dotenv
 openai
 asciichartpy
 requests
+plyer
