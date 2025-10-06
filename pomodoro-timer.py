@@ -1,17 +1,23 @@
 import time
 import sys
 from tqdm import tqdm
-import sqlite3
+import csv
+from datetime import datetime
+import os
 from plyer import notification
 
 def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User"):
-    total_sessions = 0
+    total_sessions = get_user_session_count(user_name)
+    print(f"Welcome back, {user_name}! You have completed {total_sessions} sessions so far.")
+
     for cycle in range(1, cycles + 1):
         print(f"\nCycle {cycle} of {cycles}")
         
         # Work Session
         print(f"Work time! Stay focused, {user_name}! 🍅 (Press 's' to skip, 'p' to pause)")
         if countdown(work_duration * 60):
+            total_sessions += 1
+            track_achievements(user_name, total_sessions)
             notification.notify(
                 title='Pomodoro Timer',
                 message=f'Work session is over! Time for a {break_duration}-minute break.',
@@ -31,8 +37,6 @@ def pomodoro_timer(work_duration=25, break_duration=5, cycles=2, user_name="User
                 title='Pomodoro Timer',
                 message=f'All {cycles} pomodoro cycles completed! Great job!',
             )
-        total_sessions += 1
-        track_achievements(user_name, total_sessions)
 
 
 def countdown(duration):
@@ -83,32 +87,38 @@ def handle_input():
                 return 'pause'
     return None
 
-def track_achievements(user_name, total_sessions):
-    conn = sqlite3.connect('pomodoro_achievements.db')
-    cursor = conn.cursor()
+def get_user_session_count(user_name, file_path='pomodoro_achievements.csv'):
+    if not os.path.exists(file_path):
+        return 0
+    with open(file_path, 'r', newline='') as file:
+        reader = csv.reader(file)
+        # Skip header
+        next(reader, None)
+        count = sum(1 for row in reader if row and row[0] == user_name)
+    return count
 
-    # Create table if it doesn't exist
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS achievements (
-            user_name TEXT,
-            achievement TEXT
-        )
-    ''')
-
+def track_achievements(user_name, total_sessions, file_path='pomodoro_achievements.csv'):
     achievements = {
         5: "🥉 Bronze Tomato: Complete 5 sessions",
         10: "🥈 Silver Tomato: Complete 10 sessions",
         20: "🥇 Gold Tomato: Complete 20 sessions",
         50: "👑 Pomodoro Master: Complete 50 sessions"
     }
-    
+
+    file_exists = os.path.exists(file_path)
+
     for sessions, message in achievements.items():
         if total_sessions == sessions:
             print(f"\n🎉 Achievement Unlocked for {user_name}! {message}")
-            cursor.execute("INSERT INTO achievements (user_name, achievement) VALUES (?, ?)", (user_name, message))
-            conn.commit()
-
-    conn.close()
+            notification.notify(
+                title='Achievement Unlocked!',
+                message=f'{user_name}, you unlocked: {message}',
+            )
+            with open(file_path, 'a', newline='') as file:
+                writer = csv.writer(file)
+                if not file_exists or file.tell() == 0:
+                    writer.writerow(['user_name', 'achievement', 'timestamp'])
+                writer.writerow([user_name, message, datetime.now().isoformat()])
 
 def get_integer_input(prompt, default):
     while True:
