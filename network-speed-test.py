@@ -10,8 +10,8 @@ if sys.platform == "win32":
         os.system("chcp 65001 > nul")
 
 import speedtest
-from tqdm import tqdm
-import time
+
+
 import csv
 from datetime import datetime
 import os
@@ -20,25 +20,41 @@ from openai import OpenAI
 import argparse
 import asciichartpy as asciichart
 import requests
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
+from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
+from rich.live import Live
+from rich.align import Align
+from rich.layout import Layout
+from rich.padding import Padding
+from rich.table import Table
+
+# --- Global Console ---
+console = Console()
 
 def display_ip_details():
-    """Fetches and displays public IP and geolocation details."""
+    """Fetches and displays public IP and geolocation details using Rich."""
     try:
-        print("Fetching your public IP details...")
+        console.print("Fetching your public IP details...", style="cyan")
         response = requests.get("https://ipinfo.io/json")
-        response.raise_for_status()  # Raise an exception for bad status codes
+        response.raise_for_status()
         data = response.json()
+
+        table = Table(title="Your Public IP Information", show_header=False, border_style="magenta")
+        table.add_column("Field", style="bold cyan")
+        table.add_column("Value", style="white")
         
-        print("\nYour Public IP Information:")
-        print(f"  IP Address: {data.get('ip')}")
-        print(f"  ISP: {data.get('org')}")
-        print(f"  Location: {data.get('city')}, {data.get('region')}, {data.get('country')}")
-        print("-" * 30)
+        table.add_row("IP Address", data.get('ip', 'N/A'))
+        table.add_row("ISP", data.get('org', 'N/A'))
+        table.add_row("Location", f"{data.get('city', 'N/A')}, {data.get('region', 'N/A')}, {data.get('country', 'N/A')}")
+        
+        console.print(table)
 
     except requests.exceptions.RequestException as e:
-        print(f"\nCould not fetch IP details: {e}")
+        console.print(Panel(f"Could not fetch IP details: {e}", title="[bold red]Error[/bold red]"), style="red")
     except Exception as e:
-        print(f"\nAn unexpected error occurred while fetching IP details: {e}")
+        console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"), style="red")
 
 def get_optimization_suggestions(download_speed, upload_speed, ping):
     try:
@@ -57,50 +73,60 @@ def get_optimization_suggestions(download_speed, upload_speed, ping):
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"Could not get AI suggestions. Error: {e}"
+        return f"[bold red]Could not get AI suggestions. Error:[/] {e}"
 
 def test_internet_speed():
     display_ip_details()
-    print("\nTesting your internet speed, please wait...")
-    try:
-        # Initialize the progress bar
-        with tqdm(total=100, desc="Running Tests", bar_format='{l_bar}{bar} [ time left: {remaining} ]') as pbar:
+    console.print("\nTesting your internet speed, please wait...", style="cyan")
+
+    progress = Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(bar_width=50),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TimeRemainingColumn(),
+    )
+
+    layout = Layout()
+    layout.split(
+        Layout(name="main", ratio=1),
+        Layout(name="footer", size=3)
+    )
+    layout["main"].update(Align.center(progress))
+
+    with Live(layout, console=console, screen=False, refresh_per_second=10) as live:
+        try:
+            task = progress.add_task("Running Tests", total=100)
             
             st = speedtest.Speedtest()
-            pbar.update(20)  # Update progress after initializing Speedtest
-
-            # Get the best server based on ping
+            progress.update(task, advance=20, description="Finding best server")
             st.get_best_server()
-            pbar.update(30)  # Update progress after getting best server
-            
-            # Perform download and upload speed tests
-            download_speed = st.download() / 1_000_000  # Convert from bits/s to Mbits/s
-            pbar.update(25)  # Update progress after download test
-
-            upload_speed = st.upload() / 1_000_000      # Convert from bits/s to Mbits/s
-            pbar.update(20)  # Update progress after upload test
-
+            progress.update(task, advance=30, description="Testing download speed")
+            download_speed = st.download() / 1_000_000
+            progress.update(task, advance=25, description="Testing upload speed")
+            upload_speed = st.upload() / 1_000_000
+            progress.update(task, advance=20, description="Measuring ping")
             ping = st.results.ping
-            pbar.update(5)   # Final progress update
+            progress.update(task, advance=5, description="Done!")
 
-        # Display results
-        print(f"\nYour Internet Speed Results:")
-        print(f"Download Speed: {download_speed:.2f} Mbps")
-        print(f"Upload Speed: {upload_speed:.2f} Mbps")
-        print(f"Ping: {ping:.2f} ms")
+            results_text = Text(f"Download: [bold green]{download_speed:.2f} Mbps[/bold green] | "
+                                f"Upload: [bold blue]{upload_speed:.2f} Mbps[/bold blue] | "
+                                f"Ping: [bold magenta]{ping:.2f} ms[/bold magenta]", justify="center")
+            
+            live.update(Panel(results_text, title="[bold]Speed Test Results[/bold]"))
 
-        # Get and display optimization suggestions
-        suggestions = get_optimization_suggestions(download_speed, upload_speed, ping)
-        print("\nAI Suggestions:")
-        print(suggestions)
+            # Get and display optimization suggestions
+            with console.status("[bold cyan]Getting AI optimization suggestions...[/bold cyan]", spinner="dots"):
+                suggestions = get_optimization_suggestions(download_speed, upload_speed, ping)
+            
+            console.print(Panel(Text(suggestions), title="[bold]AI Suggestions[/bold]"))
 
-        # Log results to CSV file
-        log_results(download_speed, upload_speed, ping)
-    except speedtest.SpeedtestException as e:
-        print(f"\nAn error occurred during the speed test: {e}")
-        print("Please check your internet connection and try again.")
-    except Exception as e:
-        print(f"\nAn unexpected error occurred: {e}")
+            # Log results to CSV file
+            log_results(download_speed, upload_speed, ping)
+
+        except speedtest.SpeedtestException as e:
+            console.print(Panel(f"An error occurred during the speed test: {e}\nPlease check your internet connection and try again.", title="[bold red]Speed Test Error[/bold red]"))
+        except Exception as e:
+            console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"))
 
 def log_results(download_speed, upload_speed, ping):
     filename = "network_log.csv"
@@ -114,10 +140,10 @@ def log_results(download_speed, upload_speed, ping):
         writer.writerow([now, f"{download_speed:.2f}", f"{upload_speed:.2f}", f"{ping:.2f}"])
 
 def show_history():
-    """Reads the network log and displays a historical graph of speeds."""
+    """Reads the network log and displays a historical graph of speeds using Rich."""
     filename = "network_log.csv"
     if not os.path.exists(filename):
-        print("No history log found. Run a speed test first.")
+        console.print(Panel("No history log found. Run a speed test first.", title="[bold yellow]Warning[/bold yellow]"))
         return
 
     timestamps = []
@@ -127,9 +153,9 @@ def show_history():
     with open(filename, 'r') as csvfile:
         reader = csv.reader(csvfile)
         try:
-            header = next(reader) # Skip header
+            header = next(reader)  # Skip header
         except StopIteration:
-            print("No data in history log yet.")
+            console.print(Panel("No data in history log yet.", title="[bold yellow]Warning[/bold yellow]"))
             return
             
         for row in reader:
@@ -138,22 +164,26 @@ def show_history():
                 downloads.append(float(row[1]))
                 uploads.append(float(row[2]))
             except (ValueError, IndexError):
-                print(f"Skipping malformed row: {row}")
+                console.print(f"Skipping malformed row: {row}", style="yellow")
                 continue
 
     if not downloads:
-        print("No data in history log yet.")
+        console.print(Panel("No data in history log yet.", title="[bold yellow]Warning[/bold yellow]"))
         return
 
-    print("Historical Network Speeds (last 30 entries):")
     # Only show the last 30 entries to keep the graph readable
     downloads_recent = downloads[-30:]
     uploads_recent = uploads[-30:]
-    
-    print("\nDownload Speed (Mbps):")
-    print(asciichart.plot(downloads_recent, {'height': 10}))
-    print("\nUpload Speed (Mbps):")
-    print(asciichart.plot(uploads_recent, {'height': 10}))
+
+    download_chart = asciichart.plot(downloads_recent, {'height': 10})
+    upload_chart = asciichart.plot(uploads_recent, {'height': 10})
+
+    history_text = Text("\nDownload Speed (Mbps):\n", style="bold green")
+    history_text.append(download_chart)
+    history_text.append("\n\nUpload Speed (Mbps):\n", style="bold blue")
+    history_text.append(upload_chart)
+
+    console.print(Panel(history_text, title="[bold]Historical Network Speeds (last 30 entries)[/bold]"))
 
 if __name__ == "__main__":
     load_dotenv()
