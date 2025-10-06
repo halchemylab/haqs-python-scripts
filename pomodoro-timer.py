@@ -15,7 +15,10 @@ def pomodoro_timer(work_duration=25, break_duration=5, long_break_duration=15, c
         
         # Work Session
         print(f"Work time! Stay focused, {user_name}! 🍅 (Press 's' to skip, 'p' to pause)")
+        start_time = datetime.now()
         if countdown(work_duration * 60):
+            end_time = datetime.now()
+            log_session(user_name, 'work', start_time, end_time, work_duration)
             total_sessions += 1
             track_achievements(user_name, total_sessions)
             
@@ -134,6 +137,14 @@ def track_achievements(user_name, total_sessions, file_path='pomodoro_achievemen
                 if not file_exists or file.tell() == 0:
                     writer.writerow(['user_name', 'achievement', 'timestamp'])
                 writer.writerow([user_name, message, datetime.now().isoformat()])
+
+def log_session(user_name, session_type, start_time, end_time, duration_minutes, file_path='session_log.csv'):
+    file_exists = os.path.exists(file_path)
+    with open(file_path, 'a', newline='') as file:
+        writer = csv.writer(file)
+        if not file_exists or file.tell() == 0:
+            writer.writerow(['user_name', 'session_type', 'start_time', 'end_time', 'duration_minutes'])
+        writer.writerow([user_name, session_type, start_time.isoformat(), end_time.isoformat(), duration_minutes])
 
 def get_integer_input(prompt, default):
     while True:
