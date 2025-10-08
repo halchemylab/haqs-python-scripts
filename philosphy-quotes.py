@@ -33,19 +33,21 @@ INTERPRETATION_MESSAGES = [
     "Discovering hidden insights..."
 ]
 
-# Keep track of used messages
-used_search_messages = []
-used_interpretation_messages = []
+class MessageHandler:
+    """Handles lists of messages to avoid repetition."""
+    def __init__(self, messages):
+        self.messages = messages
+        self.used_messages = []
 
-def get_random_message(message_list, used_messages):
-    """Get a random message and track usage"""
-    if not message_list or len(used_messages) >= len(message_list):
-        used_messages.clear()
-    
-    available_messages = [m for m in message_list if m not in used_messages]
-    message = random.choice(available_messages)
-    used_messages.append(message)
-    return message
+    def get_random_message(self):
+        """Get a random message and track usage."""
+        if not self.messages or len(self.used_messages) >= len(self.messages):
+            self.used_messages = []
+        
+        available_messages = [m for m in self.messages if m not in self.used_messages]
+        message = random.choice(available_messages)
+        self.used_messages.append(message)
+        return message
 
 def match_era(user_input, era_mappings):
     """Find the era from user input."""
@@ -82,7 +84,7 @@ def get_ai_explanation(quote, author):
     )
     return response.choices[0].message.content.strip()
 
-def display_random_quote(quotes, era=None):
+def display_random_quote(quotes, search_message_handler, interpretation_message_handler, era=None):
     filtered_quotes = [q for q in quotes if era is None or q["era"].lower() == era.lower()]
     if not filtered_quotes:
         print(f"No quotes found for era: {era}")
@@ -92,7 +94,7 @@ def display_random_quote(quotes, era=None):
     selected_quote = random.choice(filtered_quotes)
     
     # Display first progress message and wait
-    print(f"\n{get_random_message(SEARCH_MESSAGES, used_search_messages)}")
+    print(f"\n{search_message_handler.get_random_message()}")
     time.sleep(3)
     
     # Display the quote
@@ -100,8 +102,8 @@ def display_random_quote(quotes, era=None):
     time.sleep(4)
     
     # Display second progress messages and wait - get two different messages
-    first_msg = get_random_message(INTERPRETATION_MESSAGES, used_interpretation_messages)
-    second_msg = get_random_message(INTERPRETATION_MESSAGES, used_interpretation_messages)
+    first_msg = interpretation_message_handler.get_random_message()
+    second_msg = interpretation_message_handler.get_random_message()
     print(f"\n{first_msg}")
     time.sleep(2)
     print(f"{second_msg}")  # No newline before second message
@@ -120,13 +122,16 @@ if __name__ == "__main__":
     quotes, eras = load_quotes()
     era_mappings = generate_era_mappings(eras)
     
+    search_message_handler = MessageHandler(SEARCH_MESSAGES)
+    interpretation_message_handler = MessageHandler(INTERPRETATION_MESSAGES)
+    
     quick_inputs = ', '.join([f"'{era[0].lower()}' ({era})" for era in eras])
     print(f"Quick inputs: {quick_inputs}")
 
     while True:
         era_input = input("Enter era (or press Enter for random): ")
         matched_era = match_era(era_input, era_mappings)
-        display_random_quote(quotes, matched_era)
+        display_random_quote(quotes, search_message_handler, interpretation_message_handler, matched_era)
         
         continue_choice = input("Would you like another quote? (Y/N): ").lower()
         if continue_choice != 'y':
