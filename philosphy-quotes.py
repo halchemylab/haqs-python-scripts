@@ -5,12 +5,7 @@ import os
 import time
 from openai import OpenAI
 
-ERA_MAPPINGS = {
-    'e': 'Eastern',
-    'r': 'Roman',
-    'a': 'Renaissance',
-    'g': 'Greek'
-}
+
 
 SEARCH_MESSAGES = [
     "Searching ancient scrolls...",
@@ -52,26 +47,32 @@ def get_random_message(message_list, used_messages):
     used_messages.append(message)
     return message
 
-def match_era(user_input):
+def match_era(user_input, era_mappings):
     if not user_input:
         return None
     user_input = user_input.lower()
     # Exact match in mappings
-    if user_input in ERA_MAPPINGS:
-        return ERA_MAPPINGS[user_input]
+    if user_input in era_mappings:
+        return era_mappings[user_input]
     # Full name match
-    for full_name in ERA_MAPPINGS.values():
+    for full_name in era_mappings.values():
         if user_input == full_name.lower():
             return full_name
     return None
 
+def generate_era_mappings(eras):
+    """Generate mappings from the first letter of each era."""
+    return {era[0].lower(): era for era in eras}
+
 def load_quotes(filename="quotes.csv"):
     quotes = []
+    eras = set()
     with open(filename, mode='r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         for row in reader:
             quotes.append(row)
-    return quotes
+            eras.add(row["era"])
+    return quotes, sorted(list(eras))
 
 def get_ai_explanation(quote, author):
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -118,12 +119,16 @@ def display_random_quote(quotes, era=None):
 if __name__ == "__main__":
     load_dotenv()  # Load environment variables
     print("Welcome to the Philosophy Quotes Generator!")
-    print("Quick inputs: 'e' (Eastern), 'r' (Roman), 'a' (Renaissance), 'g' (Greek)")
-    quotes = load_quotes()
     
+    quotes, eras = load_quotes()
+    era_mappings = generate_era_mappings(eras)
+    
+    quick_inputs = ', '.join([f"'{key}' ({value})" for key, value in era_mappings.items()])
+    print(f"Quick inputs: {quick_inputs}")
+
     while True:
         era_input = input("Enter era (or press Enter for random): ")
-        matched_era = match_era(era_input)
+        matched_era = match_era(era_input, era_mappings)
         display_random_quote(quotes, matched_era)
         
         continue_choice = input("Would you like another quote? (Y/N): ").lower()
