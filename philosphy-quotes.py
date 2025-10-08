@@ -48,21 +48,18 @@ def get_random_message(message_list, used_messages):
     return message
 
 def match_era(user_input, era_mappings):
+    """Find the era from user input."""
     if not user_input:
         return None
-    user_input = user_input.lower()
-    # Exact match in mappings
-    if user_input in era_mappings:
-        return era_mappings[user_input]
-    # Full name match
-    for full_name in era_mappings.values():
-        if user_input == full_name.lower():
-            return full_name
-    return None
+    return era_mappings.get(user_input.lower())
 
 def generate_era_mappings(eras):
-    """Generate mappings from the first letter of each era."""
-    return {era[0].lower(): era for era in eras}
+    """Generate mappings from the first letter and full name of each era."""
+    mappings = {}
+    for era in eras:
+        mappings[era[0].lower()] = era
+        mappings[era.lower()] = era
+    return mappings
 
 def load_quotes(filename="quotes.csv"):
     quotes = []
@@ -123,7 +120,7 @@ if __name__ == "__main__":
     quotes, eras = load_quotes()
     era_mappings = generate_era_mappings(eras)
     
-    quick_inputs = ', '.join([f"'{key}' ({value})" for key, value in era_mappings.items()])
+    quick_inputs = ', '.join([f"'{era[0].lower()}' ({era})" for era in eras])
     print(f"Quick inputs: {quick_inputs}")
 
     while True:
