@@ -102,8 +102,8 @@ def display_random_quote(quotes, search_message_handler, interpretation_message_
     with console.status(search_message_handler.get_random_message(), spinner="dots"):
         time.sleep(3)
     
-    quote_text = f'"[italic]{selected_quote["quote"]}[/italic]"
-    author_text = f"- [bold]{selected_quote["author"]}[/bold] ({selected_quote["era"]})"
+    quote_text = f'"[italic]{selected_quote["quote"]}[/italic]"'
+    author_text = f'- [bold]{selected_quote["author"]}[/bold] ({selected_quote["era"]})'
     
     console.print(Panel(f"{quote_text}\n{author_text}", title="[bold cyan]Philosophy Quote[/bold cyan]", expand=False))
     
