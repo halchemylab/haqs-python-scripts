@@ -4,8 +4,11 @@ from dotenv import load_dotenv
 import os
 import time
 from openai import OpenAI
+from rich.console import Console
+from rich.panel import Panel
+from rich.spinner import Spinner
 
-
+console = Console()
 
 SEARCH_MESSAGES = [
     "Searching ancient scrolls...",
@@ -32,6 +35,10 @@ INTERPRETATION_MESSAGES = [
     "Reflecting on meaning...",
     "Discovering hidden insights..."
 ]
+
+
+
+
 
 class MessageHandler:
     """Handles lists of messages to avoid repetition."""
@@ -87,37 +94,29 @@ def get_ai_explanation(quote, author):
 def display_random_quote(quotes, search_message_handler, interpretation_message_handler, era=None):
     filtered_quotes = [q for q in quotes if era is None or q["era"].lower() == era.lower()]
     if not filtered_quotes:
-        print(f"No quotes found for era: {era}")
+        console.print(f"No quotes found for era: {era}", style="bold red")
         return
 
-    time.sleep(1)
     selected_quote = random.choice(filtered_quotes)
     
-    # Display first progress message and wait
-    print(f"\n{search_message_handler.get_random_message()}")
-    time.sleep(3)
+    with console.status(search_message_handler.get_random_message(), spinner="dots"):
+        time.sleep(3)
     
-    # Display the quote
-    print(f'\n"{selected_quote["quote"]}"\n- {selected_quote["author"]} ({selected_quote["era"]})')
-    time.sleep(4)
+    quote_text = f'"[italic]{selected_quote["quote"]}[/italic]"
+    author_text = f"- [bold]{selected_quote["author"]}[/bold] ({selected_quote["era"]})"
     
-    # Display second progress messages and wait - get two different messages
-    first_msg = interpretation_message_handler.get_random_message()
-    second_msg = interpretation_message_handler.get_random_message()
-    print(f"\n{first_msg}")
-    time.sleep(2)
-    print(f"{second_msg}")  # No newline before second message
-    time.sleep(2)
+    console.print(Panel(f"{quote_text}\n{author_text}", title="[bold cyan]Philosophy Quote[/bold cyan]", expand=False))
     
-    # Get and display AI explanation
-    explanation = get_ai_explanation(selected_quote["quote"], selected_quote["author"])
-    print()
-    print(explanation)
-    print()  # Add empty line after explanation
+    with console.status(interpretation_message_handler.get_random_message(), spinner="bouncingBar"):
+        explanation = get_ai_explanation(selected_quote["quote"], selected_quote["author"])
+        time.sleep(2)
+
+    console.print(Panel(explanation, title="[bold green]Interpretation[/bold green]", expand=False))
+    console.print()
 
 if __name__ == "__main__":
     load_dotenv()  # Load environment variables
-    print("Welcome to the Philosophy Quotes Generator!")
+    console.print("[bold cyan]Welcome to the Philosophy Quotes Generator![/bold cyan]")
     
     quotes, eras = load_quotes()
     era_mappings = generate_era_mappings(eras)
@@ -126,14 +125,14 @@ if __name__ == "__main__":
     interpretation_message_handler = MessageHandler(INTERPRETATION_MESSAGES)
     
     quick_inputs = ', '.join([f"'{era[0].lower()}' ({era})" for era in eras])
-    print(f"Quick inputs: {quick_inputs}")
+    console.print(f"Quick inputs: {quick_inputs}")
 
     while True:
-        era_input = input("Enter era (or press Enter for random): ")
+        era_input = console.input("Enter era (or press Enter for random): ")
         matched_era = match_era(era_input, era_mappings)
         display_random_quote(quotes, search_message_handler, interpretation_message_handler, matched_era)
         
-        continue_choice = input("Would you like another quote? (Y/N): ").lower()
+        continue_choice = console.input("Would you like another quote? (Y/N): ").lower()
         if continue_choice != 'y':
-            print("Goodbye!")
+            console.print("[bold cyan]Goodbye![/bold cyan]")
             break
