@@ -26,6 +26,7 @@ from rich.text import Text
 from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
 from rich.live import Live
 from rich.table import Table
+from rich.markdown import Markdown
 
 # --- Global Console ---
 console = Console()
@@ -108,7 +109,7 @@ def test_internet_speed():
         with console.status("[bold cyan]Getting AI optimization suggestions...[/bold cyan]", spinner="dots"):
             suggestions = get_optimization_suggestions(download_speed, upload_speed, ping)
         
-        console.print(Panel(Text(suggestions), title="[bold]AI Suggestions[/bold]"))
+        console.print(Panel(Markdown(suggestions), title="[bold]AI Suggestions[/bold]"))
 
         # Log results to CSV file
         log_results(download_speed, upload_speed, ping)
