@@ -1,6 +1,7 @@
 import time
 import sys
 import csv
+import random
 from datetime import datetime
 import os
 from plyer import notification
@@ -33,17 +34,21 @@ def pomodoro_timer(work_duration=25, break_duration=5, long_break_duration=15, c
     total_sessions = get_user_session_count(user_name)
     console.print(Panel(Text(f"Welcome back, {user_name}! You have completed {total_sessions} sessions so far.", justify="center"), title="[bold green]Pomodoro Timer[/bold green]"))
 
-    # Display cycle sequence
-    cycle_sequence = []
-    for i in range(1, cycles + 1):
-        cycle_sequence.append(f"Work ({work_duration} min)")
-        if i < cycles:
-            if i % long_break_interval == 0:
-                cycle_sequence.append(f"Long Break ({long_break_duration} min)")
-            else:
-                cycle_sequence.append(f"Break ({break_duration} min)")
-    
-    console.print(Panel(Text(" -> ".join(cycle_sequence), justify="center"), title="[bold yellow]Cycle Sequence[/bold yellow]"))
+    # Display a random motivational quote
+    try:
+        with open('quotes.csv', 'r', newline='', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            header = next(reader) # Skip header
+            quotes = list(reader)
+            if quotes:
+                random_quote = random.choice(quotes)
+                quote_text = random_quote[0]
+                author_text = random_quote[1]
+                quote_display = f'"{quote_text}"\n- {author_text}'
+                console.print(Panel(Text(quote_display, justify="center"), title="[bold yellow]Quote of the Session[/bold yellow]"))
+    except FileNotFoundError:
+        # If quotes.csv is not found, do nothing and just continue.
+        pass
     console.print("[bold cyan]Press 's' at any time to skip the current session.[/bold cyan]")
 
     for cycle in range(1, cycles + 1):
