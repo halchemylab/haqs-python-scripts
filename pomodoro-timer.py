@@ -159,26 +159,16 @@ def log_session(user_name, session_type, start_time, end_time, duration_minutes,
             writer.writerow(['user_name', 'session_type', 'start_time', 'end_time', 'duration_minutes'])
         writer.writerow([user_name, session_type, start_time.isoformat(), end_time.isoformat(), duration_minutes])
 
-def get_integer_input(prompt, default):
-    while True:
-        user_input = console.input(f"[bold cyan]{prompt}[/bold cyan]")
-        if not user_input:
-            return default
-        try:
-            return int(user_input)
-        except ValueError:
-            console.print("[bold red]Invalid input. Please enter a whole number.[/bold red]")
-
 if __name__ == "__main__":
     try:
         console.clear()
         console.print(Panel(Text("Welcome to the Pomodoro Timer!", justify="center")))
-        user_name = console.input("[bold cyan]Enter your name (default: User): [/bold cyan]") or "User"
-        work_minutes = get_integer_input("Enter work duration in minutes (default 25): ", 25)
-        break_minutes = get_integer_input("Enter short break duration in minutes (default 5): ", 5)
-        long_break_minutes = get_integer_input("Enter long break duration in minutes (default 15): ", 15)
-        total_cycles = get_integer_input("Enter number of cycles (default 4): ", 4)
-        long_break_interval = get_integer_input("Enter long break interval (default 4 cycles): ", 4)
+        user_name = "henry"
+        work_minutes = 25
+        break_minutes = 5
+        long_break_minutes = 15
+        total_cycles = 4
+        long_break_interval = 2
         
         console.clear()
         pomodoro_timer(work_minutes, break_minutes, long_break_minutes, total_cycles, long_break_interval, user_name)
