@@ -98,9 +98,9 @@ def test_internet_speed():
             ping = st.results.ping
             progress.update(task, advance=5, description="Done!")
 
-        results_text = Text(f"Download: [bold green]{download_speed:.2f} Mbps[/bold green] | "
-                            f"Upload: [bold blue]{upload_speed:.2f} Mbps[/bold blue] | "
-                            f"Ping: [bold magenta]{ping:.2f} ms[/bold magenta]", justify="center")
+        results_text = Text.from_markup(f"Download: [bold green]{download_speed:.2f} Mbps[/bold green] | "
+                                     f"Upload: [bold blue]{upload_speed:.2f} Mbps[/bold blue] | "
+                                     f"Ping: [bold magenta]{ping:.2f} ms[/bold magenta]", justify="center")
         
         console.print(Panel(results_text, title="[bold]Speed Test Results[/bold]"))
 
