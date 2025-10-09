@@ -25,9 +25,6 @@ from rich.panel import Panel
 from rich.text import Text
 from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
 from rich.live import Live
-from rich.align import Align
-from rich.layout import Layout
-from rich.padding import Padding
 from rich.table import Table
 
 # --- Global Console ---
@@ -86,15 +83,8 @@ def test_internet_speed():
         TimeRemainingColumn(),
     )
 
-    layout = Layout()
-    layout.split(
-        Layout(name="main", ratio=1),
-        Layout(name="footer", size=3)
-    )
-    layout["main"].update(Align.center(progress))
-
-    with Live(layout, console=console, screen=False, refresh_per_second=10) as live:
-        try:
+    try:
+        with Live(progress, console=console, screen=False, refresh_per_second=10) as live:
             task = progress.add_task("Running Tests", total=100)
             
             st = speedtest.Speedtest()
@@ -108,25 +98,25 @@ def test_internet_speed():
             ping = st.results.ping
             progress.update(task, advance=5, description="Done!")
 
-            results_text = Text(f"Download: [bold green]{download_speed:.2f} Mbps[/bold green] | "
-                                f"Upload: [bold blue]{upload_speed:.2f} Mbps[/bold blue] | "
-                                f"Ping: [bold magenta]{ping:.2f} ms[/bold magenta]", justify="center")
-            
-            live.update(Panel(results_text, title="[bold]Speed Test Results[/bold]"))
+        results_text = Text(f"Download: [bold green]{download_speed:.2f} Mbps[/bold green] | "
+                            f"Upload: [bold blue]{upload_speed:.2f} Mbps[/bold blue] | "
+                            f"Ping: [bold magenta]{ping:.2f} ms[/bold magenta]", justify="center")
+        
+        console.print(Panel(results_text, title="[bold]Speed Test Results[/bold]"))
 
-            # Get and display optimization suggestions
-            with console.status("[bold cyan]Getting AI optimization suggestions...[/bold cyan]", spinner="dots"):
-                suggestions = get_optimization_suggestions(download_speed, upload_speed, ping)
-            
-            console.print(Panel(Text(suggestions), title="[bold]AI Suggestions[/bold]"))
+        # Get and display optimization suggestions
+        with console.status("[bold cyan]Getting AI optimization suggestions...[/bold cyan]", spinner="dots"):
+            suggestions = get_optimization_suggestions(download_speed, upload_speed, ping)
+        
+        console.print(Panel(Text(suggestions), title="[bold]AI Suggestions[/bold]"))
 
-            # Log results to CSV file
-            log_results(download_speed, upload_speed, ping)
+        # Log results to CSV file
+        log_results(download_speed, upload_speed, ping)
 
-        except speedtest.SpeedtestException as e:
-            console.print(Panel(f"An error occurred during the speed test: {e}\nPlease check your internet connection and try again.", title="[bold red]Speed Test Error[/bold red]"))
-        except Exception as e:
-            console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"))
+    except speedtest.SpeedtestException as e:
+        console.print(Panel(f"An error occurred during the speed test: {e}\nPlease check your internet connection and try again.", title="[bold red]Speed Test Error[/bold red]"))
+    except Exception as e:
+        console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"))
 
 def log_results(download_speed, upload_speed, ping):
     filename = "network_log.csv"
