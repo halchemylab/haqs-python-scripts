@@ -78,7 +78,7 @@ def get_reading(question, cards):
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Focus specifically on answering the user's question using the symbolism of the drawn cards. Provide interpretations that are both meaningful and practical. In 3 sentences or less."},
+                {"role": "system", "content": "You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Focus specifically on answering the user's question using the symbolism of the drawn cards. Provide interpretations that are both meaningful and practical. In 3 sentences or less."}, 
                 {"role": "user", "content": prompt}
             ],
             max_tokens=150,
@@ -121,10 +121,10 @@ def main():
 
         # Pick a progress pair randomly
         interpret_msg, consult_msg = get_progress_pair()
-        with console.status(f"[bold green]{interpret_msg}[/bold green]"):
-            time.sleep(2)
-        with console.status(f"[bold green]{consult_msg}[/bold green]"):
-            time.sleep(2)
+        console.print(f"[bold green]{interpret_msg}[/bold green]")
+        time.sleep(2)
+        console.print(f"[bold green]{consult_msg}[/bold green]")
+        time.sleep(1)
 
         # Get the tarot reading from OpenAI
         with console.status("[bold blue]Consulting the OpenAI spirits...[/bold blue]"):
