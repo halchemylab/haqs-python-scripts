@@ -115,9 +115,10 @@ def main():
                 drawn_cards.append(card)
                 status.update(f"[bold yellow]Drawing cards... ({i+1}/3)[/bold yellow]")
         
-        console.print(Panel(Text("\n".join(f"- {card}" for card in drawn_cards), justify="center"), title="[bold yellow]Your Cards[/bold yellow]"))
-
-        time.sleep(1)
+        card_titles = ["1st Card", "2nd Card", "3rd Card"]
+        for i, card in enumerate(drawn_cards):
+            console.print(Panel(Text(f"- {card}", justify="center"), title=f"[bold yellow]{card_titles[i]}[/bold yellow]"))
+            time.sleep(1)
 
         # Pick a progress pair randomly
         interpret_msg, consult_msg = get_progress_pair()
