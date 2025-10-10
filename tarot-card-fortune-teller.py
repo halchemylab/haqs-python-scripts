@@ -3,6 +3,13 @@ import os
 import openai
 import time
 from dotenv import load_dotenv
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
+from rich.status import Status
+
+# --- Global Console ---
+console = Console()
 
 # Load environment variables from .env file
 load_dotenv()
@@ -83,45 +90,52 @@ def get_reading(question, cards):
     return reading
 
 def main():
-    print("Welcome to the Terminal Tarot Reading App!")
+    console.print(Panel(Text("Welcome to the Terminal Tarot Reading App!", justify="center"), title="[bold magenta]Tarot Reader[/bold magenta]"))
     while True:
         # Randomly select 3 questions from the list of 10
         sample_questions = random.sample(questions, 3)
-        print("\nPlease choose one of the following focuses:")
+        question_text = ""
         for idx, q in enumerate(sample_questions, start=1):
-            print(f"{idx}. {q}")
-        print()  # Add empty line here
-        user_choice = input("Enter the number of your choice (1-3): ").strip()
+            question_text += f"{idx}. {q}\n"
+        
+        console.print(Panel(question_text, title="[bold cyan]Choose a Focus for Your Reading[/bold cyan]"))
+        
+        user_choice = console.input("[bold]Enter the number of your choice (1-3): [/bold]").strip()
         if user_choice not in ["1", "2", "3"]:
-            print("Invalid choice. Please select 1, 2, or 3.")
+            console.print("[bold red]Invalid choice. Please select 1, 2, or 3.[/bold red]")
             continue
         selected_question = sample_questions[int(user_choice)-1]
 
-        # Draw 3 random tarot cards with pauses between each card
-        drawn_cards = random.sample(tarot_cards, 3)
-        print("\nDrawing 3 cards...")
-        for card in drawn_cards:
-            print(f"- {card}")
-            time.sleep(1)  # pause 1 second between each card
+        # Draw 3 random tarot cards with pauses
+        drawn_cards = []
+        with console.status("[bold yellow]Drawing cards...[/bold yellow]") as status:
+            for i in range(3):
+                time.sleep(1.5)
+                card = random.choice([c for c in tarot_cards if c not in drawn_cards])
+                drawn_cards.append(card)
+                status.update(f"[bold yellow]Drawing cards... ({i+1}/3)[/bold yellow]")
+        
+        console.print(Panel(Text("\n".join(f"- {card}" for card in drawn_cards), justify="center"), title="[bold yellow]Your Cards[/bold yellow]"))
 
-        time.sleep(2)
+        time.sleep(1)
 
-        # Pick a progress pair randomly (without repeating until all have been used)
+        # Pick a progress pair randomly
         interpret_msg, consult_msg = get_progress_pair()
-        print(interpret_msg)
-        time.sleep(2)
-        print(consult_msg)
-        time.sleep(2)
+        with console.status(f"[bold green]{interpret_msg}[/bold green]"):
+            time.sleep(2)
+        with console.status(f"[bold green]{consult_msg}[/bold green]"):
+            time.sleep(2)
 
         # Get the tarot reading from OpenAI
-        reading = get_reading(selected_question, drawn_cards)
-        print("\nYour Tarot Reading:")
-        print(reading)
+        with console.status("[bold blue]Consulting the OpenAI spirits...[/bold blue]"):
+            reading = get_reading(selected_question, drawn_cards)
+        
+        console.print(Panel(Text(reading, justify="left"), title="[bold green]Your Tarot Reading[/bold green]"))
 
         # Ask if the user wants another reading
-        again = input("\nWould you like another reading? (Y/N): ").strip().lower()
-        if again != 'Y':
-            print("Thank you for using the Terminal Tarot Reading App.")
+        again = console.input("\n[bold]Would you like another reading? (Y/N): [/bold]").strip().lower()
+        if again != 'y':
+            console.print("[bold magenta]Thank you for using the Terminal Tarot Reading App. Goodbye![/bold magenta]")
             break
 
 if __name__ == "__main__":
