@@ -70,7 +70,7 @@ def generate_era_mappings(eras):
         mappings[era.lower()] = era
     return mappings
 
-def load_quotes(filename="quotes.csv"):
+def load_quotes(filename="data/quotes.csv"):
     quotes = []
     eras = set()
     with open(filename, mode='r', encoding='utf-8') as file:

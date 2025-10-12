@@ -36,7 +36,7 @@ def pomodoro_timer(work_duration=25, break_duration=5, long_break_duration=15, c
 
     # Display a random motivational quote
     try:
-        with open('quotes.csv', 'r', newline='', encoding='utf-8') as file:
+        with open('data/quotes.csv', 'r', newline='', encoding='utf-8') as file:
             reader = csv.reader(file)
             header = next(reader) # Skip header
             quotes = list(reader)
@@ -47,7 +47,7 @@ def pomodoro_timer(work_duration=25, break_duration=5, long_break_duration=15, c
                 quote_display = f'"{quote_text}"\n- {author_text}'
                 console.print(Panel(Text(quote_display, justify="center"), title="[bold yellow]Quote of the Session[/bold yellow]"))
     except FileNotFoundError:
-        # If quotes.csv is not found, do nothing and just continue.
+        # If data/quotes.csv is not found, do nothing and just continue.
         pass
     console.print("[bold cyan]Press 's' at any time to skip the current session.[/bold cyan]")
 
