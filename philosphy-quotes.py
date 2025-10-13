@@ -3,11 +3,11 @@ import csv
 from dotenv import load_dotenv
 import os
 import time
-from openai import OpenAI
 from rich.console import Console
 from rich.panel import Panel
 from rich.spinner import Spinner
 import configparser
+from utils.openai_client import get_openai_client
 
 console = Console()
 
@@ -82,7 +82,7 @@ def load_quotes(filename):
     return quotes, sorted(list(eras))
 
 def get_ai_explanation(quote, author):
-    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    client = get_openai_client()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[

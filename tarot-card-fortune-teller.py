@@ -1,21 +1,18 @@
 import random
 import os
-import openai
 import time
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from rich.status import Status
+from utils.openai_client import get_openai_client
 
 # --- Global Console ---
 console = Console()
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Set your OpenAI API key here or ensure it's set as the environment variable "OPENAI_API_KEY"
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # List of tarot cards (using the 22 major arcana for simplicity)
 tarot_cards = [
@@ -75,7 +72,8 @@ def get_reading(question, cards):
         "Please provide a fun, insightful, and easy-to-understand tarot reading that interprets these cards."
     )
     try:
-        response = openai.chat.completions.create(
+        client = get_openai_client()
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Focus specifically on answering the user's question using the symbolism of the drawn cards. Provide interpretations that are both meaningful and practical. In 3 sentences or less."}, 
