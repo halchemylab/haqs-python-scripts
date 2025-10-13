@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
+import configparser
 
 # --- Global Console ---
 console = Console()
@@ -30,13 +31,13 @@ def handle_input():
                 return 'skip'
     return None
 
-def pomodoro_timer(work_duration=25, break_duration=5, long_break_duration=15, cycles=4, long_break_interval=4, user_name="User"):
-    total_sessions = get_user_session_count(user_name)
+def pomodoro_timer(work_duration, break_duration, long_break_duration, cycles, long_break_interval, user_name, quotes_file, achievements_log, session_log):
+    total_sessions = get_user_session_count(user_name, achievements_log)
     console.print(Panel(Text(f"Welcome back, {user_name}! You have completed {total_sessions} sessions so far.", justify="center"), title="[bold green]Pomodoro Timer[/bold green]"))
 
     # Display a random motivational quote
     try:
-        with open('data/quotes.csv', 'r', newline='', encoding='utf-8') as file:
+        with open(quotes_file, 'r', newline='', encoding='utf-8') as file:
             reader = csv.reader(file)
             header = next(reader) # Skip header
             quotes = list(reader)
@@ -47,7 +48,8 @@ def pomodoro_timer(work_duration=25, break_duration=5, long_break_duration=15, c
                 quote_display = f'"{quote_text}"\n- {author_text}'
                 console.print(Panel(Text(quote_display, justify="center"), title="[bold yellow]Quote of the Session[/bold yellow]"))
     except FileNotFoundError:
-        # If data/quotes.csv is not found, do nothing and just continue.
+        # If quotes_file is not found, do nothing and just continue.
+        console.print(f"[bold red]Warning: Could not find quotes file at {quotes_file}[/bold red]")
         pass
     console.print("[bold cyan]Press 's' at any time to skip the current session.[/bold cyan]")
 
@@ -59,9 +61,9 @@ def pomodoro_timer(work_duration=25, break_duration=5, long_break_duration=15, c
         
         if session_complete:
             end_time = datetime.now()
-            log_session(user_name, 'work', start_time, end_time, work_duration)
+            log_session(user_name, 'work', start_time, end_time, work_duration, session_log)
             total_sessions += 1
-            track_achievements(user_name, total_sessions)
+            track_achievements(user_name, total_sessions, achievements_log)
             console.print(f"[bold green]Work session {cycle} complete![/bold green]")
             break_msg = f"Time for a long {long_break_duration}-minute break." if cycle % long_break_interval == 0 else f"Time for a {break_duration}-minute break."
         else:
@@ -117,7 +119,7 @@ def countdown(session_type, duration, current_cycle, total_cycles):
             time.sleep(1)
     return True # Completed
 
-def get_user_session_count(user_name, file_path='pomodoro_achievements.csv'):
+def get_user_session_count(user_name, file_path):
     if not os.path.exists(file_path): return 0
     with open(file_path, 'r', newline='') as file:
         try:
@@ -127,7 +129,7 @@ def get_user_session_count(user_name, file_path='pomodoro_achievements.csv'):
         except (IOError, StopIteration):
             return 0
 
-def track_achievements(user_name, total_sessions, file_path='pomodoro_achievements.csv'):
+def track_achievements(user_name, total_sessions, file_path):
     achievements = {
         5: "🥉 Bronze Tomato: Complete 5 sessions",
         10: "🥈 Silver Tomato: Complete 10 sessions",
@@ -146,7 +148,7 @@ def track_achievements(user_name, total_sessions, file_path='pomodoro_achievemen
                 writer.writerow(['user_name', 'achievement', 'timestamp'])
             writer.writerow([user_name, message, datetime.now().isoformat()])
 
-def log_session(user_name, session_type, start_time, end_time, duration_minutes, file_path='session_log.csv'):
+def log_session(user_name, session_type, start_time, end_time, duration_minutes, file_path):
     file_exists = os.path.exists(file_path)
     with open(file_path, 'a', newline='') as file:
         writer = csv.writer(file)
@@ -156,13 +158,28 @@ def log_session(user_name, session_type, start_time, end_time, duration_minutes,
 
 if __name__ == "__main__":
     try:
-        user_name = "henry"
-        work_minutes = 25
-        break_minutes = 5
-        long_break_minutes = 15
-        total_cycles = 4
-        long_break_interval = 2
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+
+        # Get paths
+        paths = config['Paths']
+        quotes_file = paths.get('quotes_file', 'data/quotes.csv')
+        session_log = paths.get('session_log', 'session_log.csv')
+        achievements_log = paths.get('achievements_log', 'pomodoro_achievements.csv')
+
+        # Get Pomodoro settings
+        pomodoro_settings = config['Pomodoro']
+        user_name = pomodoro_settings.get('user_name', 'User')
+        work_minutes = pomodoro_settings.getint('work_minutes', 25)
+        break_minutes = pomodoro_settings.getint('break_minutes', 5)
+        long_break_minutes = pomodoro_settings.getint('long_break_minutes', 15)
+        total_cycles = pomodoro_settings.getint('cycles', 4)
+        long_break_interval = pomodoro_settings.getint('long_break_interval', 2)
         
-        pomodoro_timer(work_minutes, break_minutes, long_break_minutes, total_cycles, long_break_interval, user_name)
+        pomodoro_timer(work_minutes, break_minutes, long_break_minutes, total_cycles, long_break_interval, user_name, quotes_file, achievements_log, session_log)
     except KeyboardInterrupt:
         console.print("\n[bold yellow]Timer cancelled. Goodbye![/bold yellow]")
+    except (configparser.NoSectionError, configparser.NoOptionError) as e:
+        console.print(f"[bold red]Configuration Error: {e}. Please check your config.ini file.[/bold red]")
+    except Exception as e:
+        console.print(f"[bold red]An unexpected error occurred: {e}[/bold red]")

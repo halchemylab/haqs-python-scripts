@@ -7,6 +7,7 @@ from openai import OpenAI
 from rich.console import Console
 from rich.panel import Panel
 from rich.spinner import Spinner
+import configparser
 
 console = Console()
 
@@ -35,10 +36,6 @@ INTERPRETATION_MESSAGES = [
     "Reflecting on meaning...",
     "Discovering hidden insights..."
 ]
-
-
-
-
 
 class MessageHandler:
     """Handles lists of messages to avoid repetition."""
@@ -70,14 +67,18 @@ def generate_era_mappings(eras):
         mappings[era.lower()] = era
     return mappings
 
-def load_quotes(filename="data/quotes.csv"):
+def load_quotes(filename):
     quotes = []
     eras = set()
-    with open(filename, mode='r', encoding='utf-8') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            quotes.append(row)
-            eras.add(row["era"])
+    try:
+        with open(filename, mode='r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                quotes.append(row)
+                eras.add(row["era"])
+    except FileNotFoundError:
+        console.print(f"[bold red]Error: The quotes file was not found at {filename}[/bold red]")
+        return [], []
     return quotes, sorted(list(eras))
 
 def get_ai_explanation(quote, author):
@@ -92,6 +93,8 @@ def get_ai_explanation(quote, author):
     return response.choices[0].message.content.strip()
 
 def display_random_quote(quotes, search_message_handler, interpretation_message_handler, era=None):
+    if not quotes:
+        return
     filtered_quotes = [q for q in quotes if era is None or q["era"].lower() == era.lower()]
     if not filtered_quotes:
         console.print(f"No quotes found for era: {era}", style="bold red")
@@ -116,23 +119,30 @@ def display_random_quote(quotes, search_message_handler, interpretation_message_
 
 if __name__ == "__main__":
     load_dotenv()  # Load environment variables
+    
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    paths = config['Paths']
+    quotes_file = paths.get('quotes_file', 'data/quotes.csv')
+
     console.print("[bold cyan]Welcome to the Philosophy Quotes Generator![/bold cyan]")
     
-    quotes, eras = load_quotes()
-    era_mappings = generate_era_mappings(eras)
-    
-    search_message_handler = MessageHandler(SEARCH_MESSAGES)
-    interpretation_message_handler = MessageHandler(INTERPRETATION_MESSAGES)
-    
-    quick_inputs = ', '.join([f"'{era[0].lower()}' ({era})" for era in eras])
-    console.print(f"Quick inputs: {quick_inputs}")
-
-    while True:
-        era_input = console.input("Enter era (or press Enter for random): ")
-        matched_era = match_era(era_input, era_mappings)
-        display_random_quote(quotes, search_message_handler, interpretation_message_handler, matched_era)
+    quotes, eras = load_quotes(quotes_file)
+    if quotes:
+        era_mappings = generate_era_mappings(eras)
         
-        continue_choice = console.input("Would you like another quote? (Y/N): ").lower()
-        if continue_choice != 'y':
-            console.print("[bold cyan]Goodbye![/bold cyan]")
-            break
+        search_message_handler = MessageHandler(SEARCH_MESSAGES)
+        interpretation_message_handler = MessageHandler(INTERPRETATION_MESSAGES)
+        
+        quick_inputs = ', '.join([f"'{era[0].lower()}' ({era})" for era in eras])
+        console.print(f"Quick inputs: {quick_inputs}")
+
+        while True:
+            era_input = console.input("Enter era (or press Enter for random): ")
+            matched_era = match_era(era_input, era_mappings)
+            display_random_quote(quotes, search_message_handler, interpretation_message_handler, matched_era)
+            
+            continue_choice = console.input("Would you like another quote? (Y/N): ").lower()
+            if continue_choice != 'y':
+                console.print("[bold cyan]Goodbye![/bold cyan]")
+                break

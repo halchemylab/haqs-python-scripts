@@ -10,8 +10,6 @@ if sys.platform == "win32":
         os.system("chcp 65001 > nul")
 
 import speedtest
-
-
 import csv
 from datetime import datetime
 import os
@@ -27,6 +25,7 @@ from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
 from rich.live import Live
 from rich.table import Table
 from rich.markdown import Markdown
+import configparser
 
 # --- Global Console ---
 console = Console()
@@ -73,7 +72,7 @@ def get_optimization_suggestions(download_speed, upload_speed, ping):
     except Exception as e:
         return f"[bold red]Could not get AI suggestions. Error:[/] {e}"
 
-def test_internet_speed():
+def test_internet_speed(filename):
     display_ip_details()
     console.print("\nTesting your internet speed, please wait...", style="cyan")
 
@@ -112,15 +111,14 @@ def test_internet_speed():
         console.print(Panel(Markdown(suggestions), title="[bold]AI Suggestions[/bold]"))
 
         # Log results to CSV file
-        log_results(download_speed, upload_speed, ping)
+        log_results(download_speed, upload_speed, ping, filename)
 
     except speedtest.SpeedtestException as e:
         console.print(Panel(f"An error occurred during the speed test: {e}\nPlease check your internet connection and try again.", title="[bold red]Speed Test Error[/bold red]"))
     except Exception as e:
         console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"))
 
-def log_results(download_speed, upload_speed, ping):
-    filename = "network_log.csv"
+def log_results(download_speed, upload_speed, ping, filename):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     file_exists = os.path.exists(filename)
 
@@ -130,9 +128,8 @@ def log_results(download_speed, upload_speed, ping):
             writer.writerow(["Timestamp", "Download Speed (Mbps)", "Upload Speed (Mbps)", "Ping (ms)"])
         writer.writerow([now, f"{download_speed:.2f}", f"{upload_speed:.2f}", f"{ping:.2f}"])
 
-def show_history():
+def show_history(filename):
     """Reads the network log and displays a historical graph of speeds using Rich."""
-    filename = "network_log.csv"
     if not os.path.exists(filename):
         console.print(Panel("No history log found. Run a speed test first.", title="[bold yellow]Warning[/bold yellow]"))
         return
@@ -179,11 +176,16 @@ def show_history():
 if __name__ == "__main__":
     load_dotenv()
     
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    paths = config['Paths']
+    network_log = paths.get('network_log', 'network_log.csv')
+
     parser = argparse.ArgumentParser(description="Test internet speed and get AI optimization suggestions.")
     parser.add_argument("--history", action="store_true", help="Show a graph of historical speed data.")
     args = parser.parse_args()
 
     if args.history:
-        show_history()
+        show_history(network_log)
     else:
-        test_internet_speed()
+        test_internet_speed(network_log)
