@@ -119,15 +119,14 @@ def countdown(session_type, duration, current_cycle, total_cycles):
             time.sleep(1)
     return True # Completed
 
+from utils.csv_helper import read_csv, append_csv
+
 def get_user_session_count(user_name, file_path):
     if not os.path.exists(file_path): return 0
-    with open(file_path, 'r', newline='') as file:
-        try:
-            reader = csv.reader(file)
-            next(reader, None) # Skip header
-            return sum(1 for row in reader if row and row[0] == user_name)
-        except (IOError, StopIteration):
-            return 0
+    data = read_csv(file_path)
+    if not data or len(data) <= 1: # Check for header only or empty file
+        return 0
+    return sum(1 for row in data if row and row[0] == user_name)
 
 def track_achievements(user_name, total_sessions, file_path):
     achievements = {
@@ -141,20 +140,14 @@ def track_achievements(user_name, total_sessions, file_path):
         console.print(Panel(f"🎉 [bold yellow]Achievement Unlocked![/bold yellow] 🎉\n{message}", title="Congratulations!"))
         notification.notify(title='Achievement Unlocked!', message=f'{user_name}, you unlocked: {message}')
         
-        file_exists = os.path.exists(file_path)
-        with open(file_path, 'a', newline='') as file:
-            writer = csv.writer(file)
-            if not file_exists or file.tell() == 0:
-                writer.writerow(['user_name', 'achievement', 'timestamp'])
-            writer.writerow([user_name, message, datetime.now().isoformat()])
+        header = ['user_name', 'achievement', 'timestamp']
+        data = [[user_name, message, datetime.now().isoformat()]]
+        append_csv(file_path, data, header=header)
 
 def log_session(user_name, session_type, start_time, end_time, duration_minutes, file_path):
-    file_exists = os.path.exists(file_path)
-    with open(file_path, 'a', newline='') as file:
-        writer = csv.writer(file)
-        if not file_exists or file.tell() == 0:
-            writer.writerow(['user_name', 'session_type', 'start_time', 'end_time', 'duration_minutes'])
-        writer.writerow([user_name, session_type, start_time.isoformat(), end_time.isoformat(), duration_minutes])
+    header = ['user_name', 'session_type', 'start_time', 'end_time', 'duration_minutes']
+    data = [[user_name, session_type, start_time.isoformat(), end_time.isoformat(), duration_minutes]]
+    append_csv(file_path, data, header=header)
 
 if __name__ == "__main__":
     try:

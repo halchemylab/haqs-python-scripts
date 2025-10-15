@@ -62,30 +62,7 @@ def get_progress_pair():
     progress_pairs.remove(pair)
     return pair
 
-def get_reading(question, cards):
-    """
-    Call the OpenAI API to generate a tarot reading based on the selected question and drawn cards.
-    """
-    prompt = (
-        f"I have drawn the following tarot cards: {', '.join(cards)}. "
-        f"The focus question is: '{question}'. "
-        "Please provide a fun, insightful, and easy-to-understand tarot reading that interprets these cards."
-    )
-    try:
-        client = get_openai_client()
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Focus specifically on answering the user's question using the symbolism of the drawn cards. Provide interpretations that are both meaningful and practical. In 3 sentences or less."}, 
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=150,
-            temperature=0.7
-        )
-        reading = response.choices[0].message.content.strip()
-    except Exception as e:
-        reading = f"Error generating reading: {e}"
-    return reading
+from utils.ai_helper import get_ai_response
 
 def main():
     console.print(Panel(Text("Welcome to the Terminal Tarot Reading App!", justify="center"), title="[bold magenta]Tarot Reader[/bold magenta]"))
@@ -127,7 +104,10 @@ def main():
 
         # Get the tarot reading from OpenAI
         with console.status("[bold blue]Consulting the OpenAI spirits...[/bold blue]"):
-            reading = get_reading(selected_question, drawn_cards)
+            reading = get_ai_response(
+                system_message="You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Focus specifically on answering the user's question using the symbolism of the drawn cards. Provide interpretations that are both meaningful and practical. In 3 sentences or less.",
+                user_prompt=f"I have drawn the following tarot cards: {', '.join(drawn_cards)}. The focus question is: '{selected_question}'. Please provide a fun, insightful, and easy-to-understand tarot reading that interprets these cards."
+            )
         
         console.print(Panel(Text(reading, justify="left"), title="[bold green]Your Tarot Reading[/bold green]"))
 
@@ -136,6 +116,5 @@ def main():
         if again != 'y':
             console.print("[bold magenta]Thank you for using the Terminal Tarot Reading App. Goodbye![/bold magenta]")
             break
-
 if __name__ == "__main__":
     main()

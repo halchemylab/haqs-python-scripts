@@ -53,21 +53,7 @@ def display_ip_details():
     except Exception as e:
         console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"), style="red")
 
-def get_optimization_suggestions(download_speed, upload_speed, ping):
-    try:
-        client = get_openai_client()
-        prompt = f"My internet speed is {download_speed:.2f} Mbps download, {upload_speed:.2f} Mbps upload, and {ping:.2f} ms ping. First, evaluate if the connection is good or not. Second, What are some suggestions to optimize my internet connection? Give me 2 concise suggestions."
-
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that provides internet optimization tips."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        return f"[bold red]Could not get AI suggestions. Error:[/] {e}"
+from utils.ai_helper import get_ai_response
 
 def test_internet_speed(filename):
     display_ip_details()
@@ -103,27 +89,25 @@ def test_internet_speed(filename):
 
         # Get and display optimization suggestions
         with console.status("[bold cyan]Getting AI optimization suggestions...[/bold cyan]", spinner="dots"):
-            suggestions = get_optimization_suggestions(download_speed, upload_speed, ping)
+            suggestions = get_ai_response(
+                system_message="You are a helpful assistant that provides internet optimization tips.",
+                user_prompt=f"My internet speed is {download_speed:.2f} Mbps download, {upload_speed:.2f} Mbps upload, and {ping:.2f} ms ping. First, evaluate if the connection is good or not. Second, What are some suggestions to optimize my internet connection? Give me 2 concise suggestions."
+            )
         
         console.print(Panel(Markdown(suggestions), title="[bold]AI Suggestions[/bold]"))
 
         # Log results to CSV file
-        log_results(download_speed, upload_speed, ping, filename)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        header = ["Timestamp", "Download Speed (Mbps)", "Upload Speed (Mbps)", "Ping (ms)"]
+        data = [[now, f"{download_speed:.2f}", f"{upload_speed:.2f}", f"{ping:.2f}"]]
+        append_csv(filename, data, header=header)
 
     except speedtest.SpeedtestException as e:
         console.print(Panel(f"An error occurred during the speed test: {e}\nPlease check your internet connection and try again.", title="[bold red]Speed Test Error[/bold red]"))
     except Exception as e:
         console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"))
 
-def log_results(download_speed, upload_speed, ping, filename):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    file_exists = os.path.exists(filename)
-
-    with open(filename, 'a', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        if not file_exists:
-            writer.writerow(["Timestamp", "Download Speed (Mbps)", "Upload Speed (Mbps)", "Ping (ms)"])
-        writer.writerow([now, f"{download_speed:.2f}", f"{upload_speed:.2f}", f"{ping:.2f}"])
+from utils.csv_helper import append_csv, read_csv
 
 def show_history(filename):
     """Reads the network log and displays a historical graph of speeds using Rich."""
@@ -131,26 +115,26 @@ def show_history(filename):
         console.print(Panel("No history log found. Run a speed test first.", title="[bold yellow]Warning[/bold yellow]"))
         return
 
+    data = read_csv(filename)
+    if not data or len(data) <= 1: # Check for header only or empty file
+        console.print(Panel("No data in history log yet.", title="[bold yellow]Warning[/bold yellow]"))
+        return
+
+    header = data[0]
+    rows = data[1:]
+
     timestamps = []
     downloads = []
     uploads = []
 
-    with open(filename, 'r') as csvfile:
-        reader = csv.reader(csvfile)
+    for row in rows:
         try:
-            header = next(reader)  # Skip header
-        except StopIteration:
-            console.print(Panel("No data in history log yet.", title="[bold yellow]Warning[/bold yellow]"))
-            return
-            
-        for row in reader:
-            try:
-                timestamps.append(row[0])
-                downloads.append(float(row[1]))
-                uploads.append(float(row[2]))
-            except (ValueError, IndexError):
-                console.print(f"Skipping malformed row: {row}", style="yellow")
-                continue
+            timestamps.append(row[0])
+            downloads.append(float(row[1]))
+            uploads.append(float(row[2]))
+        except (ValueError, IndexError):
+            console.print(f"Skipping malformed row: {row}", style="yellow")
+            continue
 
     if not downloads:
         console.print(Panel("No data in history log yet.", title="[bold yellow]Warning[/bold yellow]"))

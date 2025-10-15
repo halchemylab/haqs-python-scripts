@@ -52,30 +52,8 @@ def generate_era_mappings(eras):
         mappings[era.lower()] = era
     return mappings
 
-def load_quotes(filename):
-    quotes = []
-    eras = set()
-    try:
-        with open(filename, mode='r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                quotes.append(row)
-                eras.add(row["era"])
-    except FileNotFoundError:
-        console.print(f"[bold red]Error: The quotes file was not found at {filename}[/bold red]")
-        return [], []
-    return quotes, sorted(list(eras))
-
-def get_ai_explanation(quote, author):
-    client = get_openai_client()
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are an assistant that explains quotes."},
-            {"role": "user", "content": f"Can you explain this quote: '{quote}' by {author} in 2 condensed sentences max?"}
-        ]
-    )
-    return response.choices[0].message.content.strip()
+from utils.csv_helper import read_csv
+from utils.ai_helper import get_ai_response
 
 def display_random_quote(quotes, search_message_handler, interpretation_message_handler, era=None):
     if not quotes:
@@ -96,7 +74,10 @@ def display_random_quote(quotes, search_message_handler, interpretation_message_
     console.print(Panel(f"{quote_text}\n{author_text}", title="[bold cyan]Philosophy Quote[/bold cyan]", expand=False))
     
     with console.status(interpretation_message_handler.get_random_message(), spinner="bouncingBar"):
-        explanation = get_ai_explanation(selected_quote["quote"], selected_quote["author"])
+        explanation = get_ai_response(
+            system_message="You are an assistant that explains quotes.",
+            user_prompt=f"Can you explain this quote: '{selected_quote['quote']}' by {selected_quote['author']} in 2 condensed sentences max?"
+        )
         time.sleep(2)
 
     console.print(Panel(explanation, title="[bold green]Interpretation[/bold green]", expand=False))
@@ -112,8 +93,9 @@ if __name__ == "__main__":
 
     console.print("[bold cyan]Welcome to the Philosophy Quotes Generator![/bold cyan]")
     
-    quotes, eras = load_quotes(quotes_file)
+    quotes = read_csv(quotes_file, as_dict=True)
     if quotes:
+        eras = sorted(list(set(q["era"] for q in quotes)))
         era_mappings = generate_era_mappings(eras)
         
         search_message_handler = MessageHandler(SEARCH_MESSAGES)
