@@ -1,7 +1,6 @@
 import random
 import os
 import time
-from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
@@ -10,8 +9,6 @@ from utils.openai_client import get_openai_client
 from utils.ai_helper import get_ai_response
 
 console = Console()
-
-load_dotenv()
 
 tarot_cards = [
     "The Fool", "The Magician", "The High Priestess", "The Empress", "The Emperor",

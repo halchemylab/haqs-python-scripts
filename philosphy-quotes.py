@@ -1,6 +1,5 @@
 import random
 import csv
-from dotenv import load_dotenv
 import os
 import time
 from rich.console import Console
@@ -85,7 +84,6 @@ def display_random_quote(quotes, search_message_handler, interpretation_message_
 
 if __name__ == "__main__":
     try:
-        load_dotenv()
         
         config = configparser.ConfigParser()
         config.read('config.ini')

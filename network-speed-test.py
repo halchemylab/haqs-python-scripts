@@ -10,7 +10,6 @@ import speedtest
 import csv
 from datetime import datetime
 import os
-from dotenv import load_dotenv
 import argparse
 import asciichartpy as asciichart
 import requests
@@ -149,7 +148,6 @@ def show_history(filename):
 
 if __name__ == "__main__":
     try:
-        load_dotenv()
         
         config = configparser.ConfigParser()
         config.read('config.ini')
