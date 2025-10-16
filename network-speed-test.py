@@ -1,11 +1,8 @@
 import sys
 if sys.platform == "win32":
-    # Set the console encoding to UTF-8 to support box-drawing characters
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except TypeError:
-        # In some environments, reconfigure is not available.
-        # As a fallback, change the console code page.
         import os
         os.system("chcp 65001 > nul")
 
@@ -26,8 +23,9 @@ from rich.table import Table
 from rich.markdown import Markdown
 import configparser
 from utils.openai_client import get_openai_client
+from utils.ai_helper import get_ai_response
+from utils.csv_helper import append_csv, read_csv
 
-# --- Global Console ---
 console = Console()
 
 def display_ip_details():
@@ -52,8 +50,6 @@ def display_ip_details():
         console.print(Panel(f"Could not fetch IP details: {e}", title="[bold red]Error[/bold red]"), style="red")
     except Exception as e:
         console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"), style="red")
-
-from utils.ai_helper import get_ai_response
 
 def test_internet_speed(filename):
     display_ip_details()
@@ -87,16 +83,15 @@ def test_internet_speed(filename):
         
         console.print(Panel(results_text, title="[bold]Speed Test Results[/bold]"))
 
-        # Get and display optimization suggestions
         with console.status("[bold cyan]Getting AI optimization suggestions...[/bold cyan]", spinner="dots"):
             suggestions = get_ai_response(
                 system_message="You are a helpful assistant that provides internet optimization tips.",
                 user_prompt=f"My internet speed is {download_speed:.2f} Mbps download, {upload_speed:.2f} Mbps upload, and {ping:.2f} ms ping. First, evaluate if the connection is good or not. Second, What are some suggestions to optimize my internet connection? Give me 2 concise suggestions."
             )
         
-        console.print(Panel(Markdown(suggestions), title="[bold]AI Suggestions[/bold]"))
+        if suggestions:
+            console.print(Panel(Markdown(suggestions), title="[bold]AI Suggestions[/bold]"))
 
-        # Log results to CSV file
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         header = ["Timestamp", "Download Speed (Mbps)", "Upload Speed (Mbps)", "Ping (ms)"]
         data = [[now, f"{download_speed:.2f}", f"{upload_speed:.2f}", f"{ping:.2f}"]]
@@ -107,66 +102,69 @@ def test_internet_speed(filename):
     except Exception as e:
         console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"))
 
-from utils.csv_helper import append_csv, read_csv
-
 def show_history(filename):
     """Reads the network log and displays a historical graph of speeds using Rich."""
-    if not os.path.exists(filename):
+    try:
+        data = read_csv(filename)
+        if not data or len(data) <= 1:
+            console.print(Panel("No data in history log yet.", title="[bold yellow]Warning[/bold yellow]"))
+            return
+
+        header = data[0]
+        rows = data[1:]
+
+        timestamps = []
+        downloads = []
+        uploads = []
+
+        for row in rows:
+            try:
+                timestamps.append(row[0])
+                downloads.append(float(row[1]))
+                uploads.append(float(row[2]))
+            except (ValueError, IndexError):
+                console.print(f"Skipping malformed row: {row}", style="yellow")
+                continue
+
+        if not downloads:
+            console.print(Panel("No data in history log yet.", title="[bold yellow]Warning[/bold yellow]"))
+            return
+
+        downloads_recent = downloads[-30:]
+        uploads_recent = uploads[-30:]
+
+        download_chart = asciichart.plot(downloads_recent, {'height': 10})
+        upload_chart = asciichart.plot(uploads_recent, {'height': 10})
+
+        history_text = Text("\nDownload Speed (Mbps):\n", style="bold green")
+        history_text.append(download_chart)
+        history_text.append("\n\nUpload Speed (Mbps):\n", style="bold blue")
+        history_text.append(upload_chart)
+
+        console.print(Panel(history_text, title="[bold]Historical Network Speeds (last 30 entries)[/bold]"))
+    except FileNotFoundError:
         console.print(Panel("No history log found. Run a speed test first.", title="[bold yellow]Warning[/bold yellow]"))
-        return
-
-    data = read_csv(filename)
-    if not data or len(data) <= 1: # Check for header only or empty file
-        console.print(Panel("No data in history log yet.", title="[bold yellow]Warning[/bold yellow]"))
-        return
-
-    header = data[0]
-    rows = data[1:]
-
-    timestamps = []
-    downloads = []
-    uploads = []
-
-    for row in rows:
-        try:
-            timestamps.append(row[0])
-            downloads.append(float(row[1]))
-            uploads.append(float(row[2]))
-        except (ValueError, IndexError):
-            console.print(f"Skipping malformed row: {row}", style="yellow")
-            continue
-
-    if not downloads:
-        console.print(Panel("No data in history log yet.", title="[bold yellow]Warning[/bold yellow]"))
-        return
-
-    # Only show the last 30 entries to keep the graph readable
-    downloads_recent = downloads[-30:]
-    uploads_recent = uploads[-30:]
-
-    download_chart = asciichart.plot(downloads_recent, {'height': 10})
-    upload_chart = asciichart.plot(uploads_recent, {'height': 10})
-
-    history_text = Text("\nDownload Speed (Mbps):\n", style="bold green")
-    history_text.append(download_chart)
-    history_text.append("\n\nUpload Speed (Mbps):\n", style="bold blue")
-    history_text.append(upload_chart)
-
-    console.print(Panel(history_text, title="[bold]Historical Network Speeds (last 30 entries)[/bold]"))
+    except Exception as e:
+        console.print(Panel(f"An error occurred while displaying history: {e}", title="[bold red]Error[/bold red]"))
 
 if __name__ == "__main__":
-    load_dotenv()
-    
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    paths = config['Paths']
-    network_log = paths.get('network_log', 'network_log.csv')
+    try:
+        load_dotenv()
+        
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        paths = config['Paths']
+        network_log = paths.get('network_log', 'network_log.csv')
 
-    parser = argparse.ArgumentParser(description="Test internet speed and get AI optimization suggestions.")
-    parser.add_argument("--history", action="store_true", help="Show a graph of historical speed data.")
-    args = parser.parse_args()
+        parser = argparse.ArgumentParser(description="Test internet speed and get AI optimization suggestions.")
+        parser.add_argument("--history", action="store_true", help="Show a graph of historical speed data.")
+        args = parser.parse_args()
 
-    if args.history:
-        show_history(network_log)
-    else:
-        test_internet_speed(network_log)
+        if args.history:
+            show_history(network_log)
+        else:
+            test_internet_speed(network_log)
+    except KeyboardInterrupt:
+        console.print("\n[bold yellow]Process interrupted by user. Exiting...[/bold yellow]")
+    except Exception as e:
+        console.print(f"[bold red]An unexpected error occurred: {e}[/bold red]")

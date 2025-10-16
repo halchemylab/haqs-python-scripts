@@ -7,14 +7,12 @@ from rich.panel import Panel
 from rich.text import Text
 from rich.status import Status
 from utils.openai_client import get_openai_client
+from utils.ai_helper import get_ai_response
 
-# --- Global Console ---
 console = Console()
 
-# Load environment variables from .env file
 load_dotenv()
 
-# List of tarot cards (using the 22 major arcana for simplicity)
 tarot_cards = [
     "The Fool", "The Magician", "The High Priestess", "The Empress", "The Emperor",
     "The Hierophant", "The Lovers", "The Chariot", "Strength", "The Hermit",
@@ -22,7 +20,6 @@ tarot_cards = [
     "The Devil", "The Tower", "The Star", "The Moon", "The Sun", "Judgement", "The World"
 ]
 
-# List of 10 potential focus questions
 questions = [
     "What's the general energy around me right now?",
     "What's a good area to focus on for personal growth?",
@@ -36,7 +33,6 @@ questions = [
     "How can I best prepare for the future?"
 ]
 
-# List of 10 progress-message pairs (interpreting, consulting)
 ORIGINAL_PROGRESS_PAIRS = [
     ("Interpreting the cards...", "Consulting the spirits..."),
     ("Decoding the cosmic signals...", "Channeling ancient wisdom..."),
@@ -49,12 +45,10 @@ ORIGINAL_PROGRESS_PAIRS = [
     ("Sifting through symbolism...", "Hearing whispers from beyond..."),
     ("Distilling cosmic clues...", "Embracing celestial messages...")
 ]
-# Create a mutable copy that we will draw from
 progress_pairs = ORIGINAL_PROGRESS_PAIRS.copy()
 
 def get_progress_pair():
-    """Return a random progress pair and remove it from the global list.
-        Reset the list when all pairs have been used."""
+    """Return a random progress pair and remove it from the global list."""
     global progress_pairs
     if not progress_pairs:
         progress_pairs = ORIGINAL_PROGRESS_PAIRS.copy()
@@ -62,12 +56,9 @@ def get_progress_pair():
     progress_pairs.remove(pair)
     return pair
 
-from utils.ai_helper import get_ai_response
-
 def main():
     console.print(Panel(Text("Welcome to the Terminal Tarot Reading App!", justify="center"), title="[bold magenta]Tarot Reader[/bold magenta]"))
     while True:
-        # Randomly select 3 questions from the list of 10
         sample_questions = random.sample(questions, 3)
         question_text = ""
         for idx, q in enumerate(sample_questions, start=1):
@@ -81,7 +72,6 @@ def main():
             continue
         selected_question = sample_questions[int(user_choice)-1]
 
-        # Draw 3 random tarot cards with pauses
         drawn_cards = []
         with console.status("[bold yellow]Drawing cards...[/bold yellow]") as status:
             for i in range(3):
@@ -95,26 +85,30 @@ def main():
             console.print(Panel(Text(f"- {card}", justify="center"), title=f"[bold yellow]{card_titles[i]}[/bold yellow]"))
             time.sleep(1)
 
-        # Pick a progress pair randomly
         interpret_msg, consult_msg = get_progress_pair()
         console.print(f"[bold green]{interpret_msg}[/bold green]")
         time.sleep(2)
         console.print(f"[bold green]{consult_msg}[/bold green]")
         time.sleep(1)
 
-        # Get the tarot reading from OpenAI
         with console.status("[bold blue]Consulting the OpenAI spirits...[/bold blue]"):
             reading = get_ai_response(
                 system_message="You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Focus specifically on answering the user's question using the symbolism of the drawn cards. Provide interpretations that are both meaningful and practical. In 3 sentences or less.",
                 user_prompt=f"I have drawn the following tarot cards: {', '.join(drawn_cards)}. The focus question is: '{selected_question}'. Please provide a fun, insightful, and easy-to-understand tarot reading that interprets these cards."
             )
         
-        console.print(Panel(Text(reading, justify="left"), title="[bold green]Your Tarot Reading[/bold green]"))
+        if reading:
+            console.print(Panel(Text(reading, justify="left"), title="[bold green]Your Tarot Reading[/bold green]"))
 
-        # Ask if the user wants another reading
         again = console.input("\n[bold]Would you like another reading? (Y/N): [/bold]").strip().lower()
         if again != 'y':
             console.print("[bold magenta]Thank you for using the Terminal Tarot Reading App. Goodbye![/bold magenta]")
             break
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        console.print("\n[bold yellow]Process interrupted by user. Exiting...[/bold yellow]")
+    except Exception as e:
+        console.print(f"[bold red]An unexpected error occurred: {e}[/bold red]")

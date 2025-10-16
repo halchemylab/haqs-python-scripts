@@ -9,6 +9,8 @@ from rich.spinner import Spinner
 import configparser
 from utils.openai_client import get_openai_client
 from utils.message_handler import MessageHandler
+from utils.csv_helper import read_csv
+from utils.ai_helper import get_ai_response
 
 console = Console()
 
@@ -52,9 +54,6 @@ def generate_era_mappings(eras):
         mappings[era.lower()] = era
     return mappings
 
-from utils.csv_helper import read_csv
-from utils.ai_helper import get_ai_response
-
 def display_random_quote(quotes, search_message_handler, interpretation_message_handler, era=None):
     if not quotes:
         return
@@ -80,36 +79,44 @@ def display_random_quote(quotes, search_message_handler, interpretation_message_
         )
         time.sleep(2)
 
-    console.print(Panel(explanation, title="[bold green]Interpretation[/bold green]", expand=False))
+    if explanation:
+        console.print(Panel(explanation, title="[bold green]Interpretation[/bold green]", expand=False))
     console.print()
 
 if __name__ == "__main__":
-    load_dotenv()  # Load environment variables
-    
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    paths = config['Paths']
-    quotes_file = paths.get('quotes_file', 'data/quotes.csv')
-
-    console.print("[bold cyan]Welcome to the Philosophy Quotes Generator![/bold cyan]")
-    
-    quotes = read_csv(quotes_file, as_dict=True)
-    if quotes:
-        eras = sorted(list(set(q["era"] for q in quotes)))
-        era_mappings = generate_era_mappings(eras)
+    try:
+        load_dotenv()
         
-        search_message_handler = MessageHandler(SEARCH_MESSAGES)
-        interpretation_message_handler = MessageHandler(INTERPRETATION_MESSAGES)
-        
-        quick_inputs = ', '.join([f"'{era[0].lower()}' ({era})" for era in eras])
-        console.print(f"Quick inputs: {quick_inputs}")
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        paths = config['Paths']
+        quotes_file = paths.get('quotes_file', 'data/quotes.csv')
 
-        while True:
-            era_input = console.input("Enter era (or press Enter for random): ")
-            matched_era = match_era(era_input, era_mappings)
-            display_random_quote(quotes, search_message_handler, interpretation_message_handler, matched_era)
+        console.print("[bold cyan]Welcome to the Philosophy Quotes Generator![/bold cyan]")
+        
+        quotes = read_csv(quotes_file, as_dict=True)
+        if quotes:
+            eras = sorted(list(set(q["era"] for q in quotes)))
+            era_mappings = generate_era_mappings(eras)
             
-            continue_choice = console.input("Would you like another quote? (Y/N): ").lower()
-            if continue_choice != 'y':
-                console.print("[bold cyan]Goodbye![/bold cyan]")
-                break
+            search_message_handler = MessageHandler(SEARCH_MESSAGES)
+            interpretation_message_handler = MessageHandler(INTERPRETATION_MESSAGES)
+            
+            quick_inputs = ', '.join([f"'{era[0].lower()}' ({era})" for era in eras])
+            console.print(f"Quick inputs: {quick_inputs}")
+
+            while True:
+                era_input = console.input("Enter era (or press Enter for random): ")
+                matched_era = match_era(era_input, era_mappings)
+                display_random_quote(quotes, search_message_handler, interpretation_message_handler, matched_era)
+                
+                continue_choice = console.input("Would you like another quote? (Y/N): ").lower()
+                if continue_choice != 'y':
+                    console.print("[bold cyan]Goodbye![/bold cyan]")
+                    break
+    except KeyboardInterrupt:
+        console.print("\n[bold yellow]Process interrupted by user. Exiting...[/bold yellow]")
+    except (configparser.NoSectionError, configparser.NoOptionError) as e:
+        console.print(f"[bold red]Configuration Error: {e}. Please check your config.ini file.[/bold red]")
+    except Exception as e:
+        console.print(f"[bold red]An unexpected error occurred: {e}[/bold red]")

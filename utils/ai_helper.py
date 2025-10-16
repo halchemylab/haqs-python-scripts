@@ -1,11 +1,17 @@
 from utils.openai_client import get_openai_client
+from rich.console import Console
+
+console = Console()
 
 def get_ai_response(system_message, user_prompt, max_tokens=150, temperature=0.7):
     """
     Generates a response from the OpenAI API based on a system message and user prompt.
+    Returns None if an error occurs.
     """
     try:
         client = get_openai_client()
+        if not client:
+            return None
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -17,4 +23,5 @@ def get_ai_response(system_message, user_prompt, max_tokens=150, temperature=0.7
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"Error generating AI response: {e}"
+        console.print(f"[bold red]Error generating AI response: {e}[/bold red]")
+        return None
