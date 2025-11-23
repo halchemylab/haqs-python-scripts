@@ -17,6 +17,7 @@ def main():
     cleaned = original.replace(TEXT_TO_REMOVE, "")
 
     print("\n--- CLEANED TEXT ---\n")
+    print("Just give me the answers to these practice questions: \n")
     print(cleaned)
 
 if __name__ == "__main__":
