@@ -19,12 +19,13 @@ except ImportError:
 console = Console()
 
 class TickingSound:
-    def __init__(self, file_path):
+    def __init__(self, file_path, volume=1.0):
         self.sound = None
         if pygame and file_path and os.path.exists(file_path):
             try:
                 pygame.mixer.init()
                 self.sound = pygame.mixer.Sound(file_path)
+                self.sound.set_volume(volume)
             except pygame.error as e:
                 console.print(f"[bold red]Could not initialize sound: {e}[/bold red]")
 
@@ -202,7 +203,8 @@ if __name__ == "__main__":
                 if audio_config.getboolean('enable_ticking_sound', False):
                     sound_file = audio_config.get('tick_sound_file')
                     if sound_file:
-                        ticking_sound = TickingSound(sound_file)
+                        tick_volume = audio_config.getfloat('tick_volume', 1.0)
+                        ticking_sound = TickingSound(sound_file, tick_volume)
                         if not ticking_sound.sound:
                              console.print(f"[bold yellow]Could not load ticking sound file from '{sound_file}'. Please check the file path in config.ini.[/bold yellow]")
                     else:
