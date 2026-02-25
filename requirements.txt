@@ -5,3 +5,4 @@ asciichartpy
 requests
 plyer
 rich
+pygame
