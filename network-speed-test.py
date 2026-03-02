@@ -152,7 +152,7 @@ if __name__ == "__main__":
         config = configparser.ConfigParser()
         config.read('config.ini')
         paths = config['Paths']
-        network_log = paths.get('network_log', 'network_log.csv')
+        network_log = paths.get('network_log', 'data/network_log.csv')
 
         parser = argparse.ArgumentParser(description="Test internet speed and get AI optimization suggestions.")
         parser.add_argument("--history", action="store_true", help="Show a graph of historical speed data.")
