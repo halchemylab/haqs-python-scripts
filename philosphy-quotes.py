@@ -46,10 +46,18 @@ def match_era(user_input, era_mappings):
     return era_mappings.get(user_input.lower())
 
 def generate_era_mappings(eras):
-    """Generate mappings from the first letter and full name of each era."""
+    """Generate mappings. Use first 2 letters if there are duplicate first letters."""
     mappings = {}
+    first_letters = [era[0].lower() for era in eras]
+    
     for era in eras:
-        mappings[era[0].lower()] = era
+        first_letter = era[0].lower()
+        if first_letters.count(first_letter) > 1:
+            key = era[:2].lower()
+        else:
+            key = first_letter
+        
+        mappings[key] = era
         mappings[era.lower()] = era
     return mappings
 
@@ -100,7 +108,16 @@ if __name__ == "__main__":
             search_message_handler = MessageHandler(SEARCH_MESSAGES)
             interpretation_message_handler = MessageHandler(INTERPRETATION_MESSAGES)
             
-            quick_inputs = ', '.join([f"'{era[0].lower()}' ({era})" for era in eras])
+            first_letters = [e[0].lower() for e in eras]
+            display_items = []
+            for era in eras:
+                if first_letters.count(era[0].lower()) > 1:
+                    key = era[:2].lower()
+                else:
+                    key = era[0].lower()
+                display_items.append(f"'{key}' ({era})")
+
+            quick_inputs = ', '.join(display_items)
             console.print(f"Quick inputs: {quick_inputs}")
 
             while True:
