@@ -20,6 +20,7 @@ from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
 from rich.live import Live
 from rich.table import Table
 from rich.markdown import Markdown
+from rich.prompt import Confirm
 import configparser
 from utils.openai_client import get_openai_client
 from utils.ai_helper import get_ai_response
@@ -52,6 +53,10 @@ def display_ip_details():
 
 def test_internet_speed(filename):
     display_ip_details()
+
+    # Prompt user for AI diagnosis choice
+    run_ai = Confirm.ask("Would you like to get an AI diagnosis after the test?", default=True)
+
     console.print("\nTesting your internet speed, please wait...", style="cyan")
 
     progress = Progress(
@@ -82,14 +87,15 @@ def test_internet_speed(filename):
         
         console.print(Panel(results_text, title="[bold]Speed Test Results[/bold]"))
 
-        with console.status("[bold cyan]Getting AI optimization suggestions...[/bold cyan]", spinner="dots"):
-            suggestions = get_ai_response(
-                system_message="You are a helpful assistant that provides internet optimization tips.",
-                user_prompt=f"My internet speed is {download_speed:.2f} Mbps download, {upload_speed:.2f} Mbps upload, and {ping:.2f} ms ping. First, evaluate if the connection is good or not. Second, What are some suggestions to optimize my internet connection? Give me 2 concise suggestions."
-            )
-        
-        if suggestions:
-            console.print(Panel(Markdown(suggestions), title="[bold]AI Suggestions[/bold]"))
+        if run_ai:
+            with console.status("[bold cyan]Getting AI optimization suggestions...[/bold cyan]", spinner="dots"):
+                suggestions = get_ai_response(
+                    system_message="You are a helpful assistant that provides internet optimization tips.",
+                    user_prompt=f"My internet speed is {download_speed:.2f} Mbps download, {upload_speed:.2f} Mbps upload, and {ping:.2f} ms ping. First, evaluate if the connection is good or not. Second, What are some suggestions to optimize my internet connection? Give me 2 concise suggestions."
+                )
+            
+            if suggestions:
+                console.print(Panel(Markdown(suggestions), title="[bold]AI Suggestions[/bold]"))
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         header = ["Timestamp", "Download Speed (Mbps)", "Upload Speed (Mbps)", "Ping (ms)"]
