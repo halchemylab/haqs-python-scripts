@@ -18,7 +18,7 @@ except ImportError:
 
 console = Console()
 
-class TickingSound:
+class SoundEffect:
     def __init__(self, file_path, volume=1.0):
         self.sound = None
         if pygame and file_path and os.path.exists(file_path):
@@ -57,6 +57,8 @@ def pomodoro_timer(work_duration, break_duration, long_break_duration, cycles, l
     total_sessions = get_user_session_count(user_name, achievements_log)
     console.print(Panel(Text(f"Welcome back, {user_name}! You have completed {total_sessions} sessions so far.", justify="center"), title="[bold green]Pomodoro Timer[/bold green]"))
 
+    alarm_sound = audio_settings.get('alarm_sound')
+
     try:
         quotes = read_csv(quotes_file)
         if quotes:
@@ -77,6 +79,7 @@ def pomodoro_timer(work_duration, break_duration, long_break_duration, cycles, l
         session_complete = countdown('work', work_duration * 60, cycle, cycles, audio_settings)
         
         if session_complete:
+            if alarm_sound: alarm_sound.play()
             end_time = datetime.now()
             log_session(user_name, 'work', start_time, end_time, work_duration, session_log)
             total_sessions += 1
@@ -98,6 +101,7 @@ def pomodoro_timer(work_duration, break_duration, long_break_duration, cycles, l
                 break_complete = countdown('break', break_duration * 60, cycle, cycles, audio_settings)
             
             if break_complete:
+                if alarm_sound: alarm_sound.play()
                 console.print("[bold green]Break over![/bold green]")
             else:
                 console.print("[bold yellow]Break skipped.[/bold yellow]")
@@ -108,6 +112,7 @@ def pomodoro_timer(work_duration, break_duration, long_break_duration, cycles, l
                 console.input("\n[bold cyan]Press Enter to start the next work session...[/bold cyan]")
 
     console.print(Panel(Text(f"All {cycles} pomodoro cycles completed! Great job, {user_name}! 🎉", justify="center"), title="[bold green]Finished![/bold green]"))
+    if alarm_sound: alarm_sound.play()
     notification.notify(title='Pomodoro Complete', message=f'All {cycles} cycles completed! Great job!')
 
 def countdown(session_type, duration, current_cycle, total_cycles, audio_settings):
@@ -196,22 +201,30 @@ if __name__ == "__main__":
         long_break_interval = pomodoro_settings.getint('long_break_interval', 2)
 
         audio_settings = {}
-        ticking_sound = None
         if pygame:
             try:
                 audio_config = config['Audio']
+                # Ticking Sound
                 if audio_config.getboolean('enable_ticking_sound', False):
-                    sound_file = audio_config.get('tick_sound_file')
-                    if sound_file:
+                    tick_file = audio_config.get('tick_sound_file')
+                    if tick_file:
                         tick_volume = audio_config.getfloat('tick_volume', 1.0)
-                        ticking_sound = TickingSound(sound_file, tick_volume)
+                        ticking_sound = SoundEffect(tick_file, tick_volume)
                         if not ticking_sound.sound:
-                             console.print(f"[bold yellow]Could not load ticking sound file from '{sound_file}'. Please check the file path in config.ini.[/bold yellow]")
-                    else:
-                        console.print("[bold yellow]Ticking sound is enabled, but no sound file is specified in config.ini.[/bold yellow]")
+                             console.print(f"[bold yellow]Could not load ticking sound file from '{tick_file}'.[/bold yellow]")
+                        audio_settings['ticking_sound'] = ticking_sound
+                        audio_settings['tick_speed'] = audio_config.getfloat('tick_speed', 1.0)
 
-                    audio_settings['ticking_sound'] = ticking_sound
-                    audio_settings['tick_speed'] = audio_config.getfloat('tick_speed', 1.0)
+                # Alarm Sound
+                if audio_config.getboolean('enable_alarm_sound', False):
+                    alarm_file = audio_config.get('alarm_sound_file')
+                    if alarm_file:
+                        alarm_volume = audio_config.getfloat('alarm_volume', 1.0)
+                        alarm_sound = SoundEffect(alarm_file, alarm_volume)
+                        if not alarm_sound.sound:
+                             console.print(f"[bold yellow]Could not load alarm sound file from '{alarm_file}'.[/bold yellow]")
+                        audio_settings['alarm_sound'] = alarm_sound
+
             except (configparser.NoSectionError, configparser.NoOptionError) as e:
                 pass # Audio section is optional
         
