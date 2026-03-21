@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
+from rich.table import Table
 import configparser
 from utils.csv_helper import read_csv, append_csv
 try:
@@ -114,6 +115,8 @@ def pomodoro_timer(work_duration, break_duration, long_break_duration, cycles, l
     console.print(Panel(Text(f"All {cycles} pomodoro cycles completed! Great job, {user_name}! 🎉", justify="center"), title="[bold green]Finished![/bold green]"))
     if alarm_sound: alarm_sound.play()
     notification.notify(title='Pomodoro Complete', message=f'All {cycles} cycles completed! Great job!')
+    
+    display_daily_summary(user_name, session_log)
 
 def countdown(session_type, duration, current_cycle, total_cycles, audio_settings):
     title_styles = {
@@ -181,6 +184,39 @@ def log_session(user_name, session_type, start_time, end_time, duration_minutes,
     header = ['user_name', 'session_type', 'start_time', 'end_time', 'duration_minutes']
     data = [[user_name, session_type, start_time.isoformat(), end_time.isoformat(), duration_minutes]]
     append_csv(file_path, data, header=header)
+
+def display_daily_summary(user_name, file_path):
+    if not os.path.exists(file_path):
+        console.print("\n[bold yellow]No session history found. Start your first session to see a daily summary![/bold yellow]")
+        return
+
+    data = read_csv(file_path, as_dict=True)
+    today = datetime.now().date().isoformat()
+    
+    daily_sessions = [row for row in data if row['user_name'] == user_name and row['start_time'].startswith(today)]
+    
+    if not daily_sessions:
+        console.print("\n[bold yellow]No sessions completed today yet.[/bold yellow]")
+        return
+
+    work_sessions = [s for s in daily_sessions if s['session_type'] == 'work']
+    total_minutes = sum(int(s['duration_minutes']) for s in work_sessions)
+    total_count = len(work_sessions)
+
+    table = Table(title=f"📅 Daily Summary for {user_name} ({today})", show_header=True, header_style="bold magenta")
+    table.add_column("Metric", style="dim")
+    table.add_column("Value", justify="right")
+    
+    table.add_row("Focus Sessions Completed", str(total_count))
+    table.add_row("Total Focus Time", f"{total_minutes} minutes")
+    
+    if total_count > 0:
+        avg_session = total_minutes / total_count
+        table.add_row("Average Session Duration", f"{avg_session:.1f} minutes")
+
+    console.print("\n")
+    console.print(table)
+    console.print("\n")
 
 if __name__ == "__main__":
     try:
