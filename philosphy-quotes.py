@@ -1,12 +1,9 @@
 import random
-import csv
-import os
 import time
 from rich.console import Console
 from rich.panel import Panel
-from rich.spinner import Spinner
+from rich.markup import escape
 import configparser
-from utils.openai_client import get_openai_client
 from utils.message_handler import MessageHandler
 from utils.csv_helper import read_csv
 from utils.ai_helper import get_ai_response
@@ -14,59 +11,70 @@ from utils.ai_helper import get_ai_response
 console = Console()
 
 SEARCH_MESSAGES = [
-    "Searching ancient scrolls...",
-    "Finding the right quote for you...",
-    "Looking through thousands of years of wisdom...",
-    "Consulting the great thinkers...",
-    "Exploring philosophical depths...",
-    "Diving into the archives of wisdom...",
-    "Dusting off ancient manuscripts...",
-    "Gathering timeless insights...",
-    "Seeking profound thoughts...",
-    "Unveiling philosophical treasures..."
+    "Searching ancient texts...",
+    "Finding the right original-language passage...",
+    "Looking through Latin and Classical Chinese sources...",
+    "Consulting the old masters...",
+    "Exploring philosophical texts...",
+    "Diving into the archive...",
+    "Dusting off manuscripts...",
+    "Gathering source-language wisdom...",
+    "Seeking a compact passage...",
+    "Unveiling a primary-text fragment..."
 ]
 
 INTERPRETATION_MESSAGES = [
-    "Deciphering the meaning...",
-    "Understanding the wisdom...",
-    "Contemplating the depths...",
-    "Analyzing the insight...",
+    "Translating and interpreting...",
+    "Reading the original closely...",
+    "Contemplating the passage...",
+    "Analyzing the source text...",
     "Extracting the essence...",
     "Interpreting the message...",
     "Unraveling the philosophy...",
-    "Processing the wisdom...",
-    "Reflecting on meaning...",
-    "Discovering hidden insights..."
+    "Processing the old wording...",
+    "Reflecting on the meaning...",
+    "Finding the argument inside the line..."
 ]
 
-def match_era(user_input, era_mappings):
-    """Find the era from user input."""
+LANGUAGE_DISPLAY = {
+    "latin": "Latin",
+    "classical chinese": "Classical Chinese",
+}
+
+def normalize_language(language):
+    return LANGUAGE_DISPLAY.get(language.lower(), language)
+
+def match_language(user_input, language_mappings):
+    """Find the language from user input."""
     if not user_input:
         return None
-    return era_mappings.get(user_input.lower())
+    return language_mappings.get(user_input.lower())
 
-def generate_era_mappings(eras):
-    """Generate mappings. Use first 2 letters if there are duplicate first letters."""
+def generate_language_mappings(languages):
+    """Generate mappings for the available source languages."""
     mappings = {}
-    first_letters = [era[0].lower() for era in eras]
-    
-    for era in eras:
-        first_letter = era[0].lower()
-        if first_letters.count(first_letter) > 1:
-            key = era[:2].lower()
-        else:
-            key = first_letter
-        
-        mappings[key] = era
-        mappings[era.lower()] = era
+    for language in languages:
+        normalized = language.lower()
+        mappings[normalized] = language
+        mappings[normalize_language(language).lower()] = language
+
+    mappings["l"] = "latin"
+    mappings["latin"] = "latin"
+    mappings["c"] = "classical chinese"
+    mappings["chinese"] = "classical chinese"
+    mappings["classical"] = "classical chinese"
+    mappings["classical chinese"] = "classical chinese"
     return mappings
 
-def display_random_quote(quotes, search_message_handler, interpretation_message_handler, era=None):
+def display_random_quote(quotes, search_message_handler, interpretation_message_handler, language=None):
     if not quotes:
         return
-    filtered_quotes = [q for q in quotes if era is None or q["era"].lower() == era.lower()]
+    filtered_quotes = [
+        q for q in quotes
+        if language is None or q["language"].lower() == language.lower()
+    ]
     if not filtered_quotes:
-        console.print(f"No quotes found for era: {era}", style="bold red")
+        console.print(f"No quotes found for language: {language}", style="bold red")
         return
 
     selected_quote = random.choice(filtered_quotes)
@@ -74,15 +82,33 @@ def display_random_quote(quotes, search_message_handler, interpretation_message_
     with console.status(search_message_handler.get_random_message(), spinner="dots"):
         time.sleep(3)
     
-    quote_text = f'"[italic]{selected_quote["quote"]}[/italic]"'
-    author_text = f'- [bold]{selected_quote["author"]}[/bold] ({selected_quote["era"]})'
+    quote_text = f'[italic]{escape(selected_quote["original"])}[/italic]'
+    author_text = (
+        f'- [bold]{escape(selected_quote["author"])}[/bold], '
+        f'{escape(selected_quote["work"])} '
+        f'([cyan]{escape(normalize_language(selected_quote["language"]))}[/cyan])'
+    )
     
-    console.print(Panel(f"{quote_text}\n{author_text}", title="[bold cyan]Philosophy Quote[/bold cyan]", expand=False))
+    console.print(Panel(f"{quote_text}\n{author_text}", title="[bold cyan]Original Philosophy Quote[/bold cyan]", expand=False))
     
     with console.status(interpretation_message_handler.get_random_message(), spinner="bouncingBar"):
         explanation = get_ai_response(
-            system_message="You are an assistant that explains quotes.",
-            user_prompt=f"Can you explain this quote: '{selected_quote['quote']}' by {selected_quote['author']} in 2 condensed sentences max?"
+            system_message=(
+                "You are a careful philosophy tutor. Translate original Latin or Classical Chinese "
+                "plainly, then interpret the philosophical point without overclaiming."
+            ),
+            user_prompt=(
+                "Interpret this original-language philosophical quote.\n\n"
+                f"Original: {selected_quote['original']}\n"
+                f"Author: {selected_quote['author']}\n"
+                f"Work: {selected_quote['work']}\n"
+                f"Language: {normalize_language(selected_quote['language'])}\n\n"
+                "Respond with two short parts:\n"
+                "Translation: one concise English rendering.\n"
+                "Interpretation: two condensed sentences on the philosophical meaning."
+            ),
+            max_tokens=180,
+            temperature=0.4
         )
         time.sleep(2)
 
@@ -102,28 +128,24 @@ if __name__ == "__main__":
         
         quotes = read_csv(quotes_file, as_dict=True)
         if quotes:
-            eras = sorted(list(set(q["era"] for q in quotes)))
-            era_mappings = generate_era_mappings(eras)
+            languages = sorted(list(set(q["language"] for q in quotes)))
+            language_mappings = generate_language_mappings(languages)
             
             search_message_handler = MessageHandler(SEARCH_MESSAGES)
             interpretation_message_handler = MessageHandler(INTERPRETATION_MESSAGES)
             
-            first_letters = [e[0].lower() for e in eras]
-            display_items = []
-            for era in eras:
-                if first_letters.count(era[0].lower()) > 1:
-                    key = era[:2].lower()
-                else:
-                    key = era[0].lower()
-                display_items.append(f"'{key}' ({era})")
-
-            quick_inputs = ', '.join(display_items)
+            quick_inputs = "'l' (Latin), 'c' (Classical Chinese)"
             console.print(f"Quick inputs: {quick_inputs}")
 
             while True:
-                era_input = console.input("Enter era (or press Enter for random): ")
-                matched_era = match_era(era_input, era_mappings)
-                display_random_quote(quotes, search_message_handler, interpretation_message_handler, matched_era)
+                language_input = console.input("Enter language (or press Enter for random): ")
+                matched_language = match_language(language_input, language_mappings)
+                display_random_quote(
+                    quotes,
+                    search_message_handler,
+                    interpretation_message_handler,
+                    matched_language
+                )
                 
                 continue_choice = console.input("Would you like another quote? (Y/N): ").lower()
                 if continue_choice != 'y':
