@@ -58,9 +58,9 @@ def generate_language_mappings(languages):
         mappings[normalized] = language
         mappings[normalize_language(language).lower()] = language
 
-    mappings["l"] = "latin"
+    mappings["0"] = "classical chinese"
+    mappings["1"] = "latin"
     mappings["latin"] = "latin"
-    mappings["c"] = "classical chinese"
     mappings["chinese"] = "classical chinese"
     mappings["classical"] = "classical chinese"
     mappings["classical chinese"] = "classical chinese"
@@ -134,11 +134,11 @@ if __name__ == "__main__":
             search_message_handler = MessageHandler(SEARCH_MESSAGES)
             interpretation_message_handler = MessageHandler(INTERPRETATION_MESSAGES)
             
-            quick_inputs = "'l' (Latin), 'c' (Classical Chinese)"
+            quick_inputs = "'0' (Classical Chinese), '1' (Latin)"
             console.print(f"Quick inputs: {quick_inputs}")
 
             while True:
-                language_input = console.input("Enter language (or press Enter for random): ")
+                language_input = console.input("Enter language number (or press Enter for random): ")
                 matched_language = match_language(language_input, language_mappings)
                 display_random_quote(
                     quotes,
