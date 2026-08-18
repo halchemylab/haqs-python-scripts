@@ -92,8 +92,11 @@ def display_random_quote(quotes, search_message_handler, interpretation_message_
     with console.status(interpretation_message_handler.get_random_message(), spinner="bouncingBar"):
         explanation = get_ai_response(
             system_message=(
-                "You are a careful philosophy tutor. Translate original Latin or Classical Chinese "
-                "plainly, then interpret the philosophical point without overclaiming."
+                "You are a philosophical interpreter with expertise in Latin and Classical Chinese texts. "
+                "Provide a clear, faithful English translation, then offer a concise philosophical "
+                "interpretation grounded in the quoted passage and its attributed work. Preserve ambiguity "
+                "where appropriate, distinguish interpretation from literal meaning, and avoid unsupported "
+                "historical claims."
             ),
             user_prompt=(
                 "Interpret this original-language philosophical quote.\n\n"
