@@ -12,8 +12,6 @@ console = Console()
 
 SEARCH_MESSAGES = [
     "Searching ancient texts...",
-    "Finding the right original-language passage...",
-    "Looking through Latin and Classical Chinese sources...",
     "Consulting the old masters...",
     "Exploring philosophical texts...",
     "Diving into the archive...",
