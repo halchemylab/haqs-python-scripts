@@ -5,7 +5,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from rich.status import Status
-from utils.openai_client import get_openai_client
 from utils.ai_helper import get_ai_response
 
 console = Console()
@@ -88,14 +87,17 @@ def main():
         console.print(f"[bold green]{consult_msg}[/bold green]")
         time.sleep(1)
 
-        with console.status("[bold blue]Consulting the OpenAI spirits...[/bold blue]"):
+        with console.status("[bold blue]Consulting the spirits...[/bold blue]"):
             reading = get_ai_response(
                 system_message="You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Focus specifically on answering the user's question using the symbolism of the drawn cards. Provide interpretations that are both meaningful and practical. In 3 sentences or less.",
-                user_prompt=f"I have drawn the following tarot cards: {', '.join(drawn_cards)}. The focus question is: '{selected_question}'. Please provide a fun, insightful, and easy-to-understand tarot reading that interprets these cards."
+                user_prompt=f"I have drawn the following tarot cards: {', '.join(drawn_cards)}. The focus question is: '{selected_question}'. Please provide a fun, insightful, and easy-to-understand tarot reading that interprets these cards.",
+                display_errors=False
             )
         
         if reading:
             console.print(Panel(Text(reading, justify="left"), title="[bold green]Your Tarot Reading[/bold green]"))
+        else:
+            console.print("[bold red]The reading could not be completed. Please check your setup and try again.[/bold red]")
 
         again = console.input("\n[bold]Would you like another reading? (Y/N): [/bold]").strip().lower()
         if again != 'y':

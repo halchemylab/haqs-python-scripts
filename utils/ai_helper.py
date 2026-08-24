@@ -3,13 +3,13 @@ from rich.console import Console
 
 console = Console()
 
-def get_ai_response(system_message, user_prompt, max_tokens=150, temperature=0.7):
+def get_ai_response(system_message, user_prompt, max_tokens=150, temperature=0.7, display_errors=True):
     """
     Generates a response from the OpenAI API based on a system message and user prompt.
     Returns None if an error occurs.
     """
     try:
-        client = get_openai_client()
+        client = get_openai_client(display_errors=display_errors)
         if not client:
             return None
         response = client.chat.completions.create(
@@ -23,5 +23,6 @@ def get_ai_response(system_message, user_prompt, max_tokens=150, temperature=0.7
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        console.print(f"[bold red]Error generating AI response: {e}[/bold red]")
+        if display_errors:
+            console.print(f"[bold red]Error generating AI response: {e}[/bold red]")
         return None
