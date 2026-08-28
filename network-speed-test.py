@@ -7,9 +7,8 @@ if sys.platform == "win32":
         os.system("chcp 65001 > nul")
 
 import speedtest
-import csv
 from datetime import datetime
-import os
+from time import sleep
 import argparse
 import asciichartpy as asciichart
 import requests
@@ -27,6 +26,9 @@ from utils.ai_helper import get_ai_response
 from utils.csv_helper import append_csv, read_csv
 
 console = Console()
+SPEED_LOG_HEADER = ["Timestamp", "Download Speed (Mbps)", "Upload Speed (Mbps)", "Ping (ms)"]
+MONITOR_INTERVAL_MINUTES = 10
+MONITOR_MAX_TESTS = 6
 
 def display_ip_details():
     """Fetches and displays public IP and geolocation details using Rich."""
@@ -51,12 +53,8 @@ def display_ip_details():
     except Exception as e:
         console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"), style="red")
 
-def test_internet_speed(filename):
-    display_ip_details()
-
-    # Prompt user for AI diagnosis choice
-    run_ai = Confirm.ask("Would you like to get an AI diagnosis after the test?", default=True)
-
+def run_speed_test():
+    """Runs a speed test and returns download, upload, and ping values."""
     console.print("\nTesting your internet speed, please wait...", style="cyan")
 
     progress = Progress(
@@ -86,26 +84,75 @@ def test_internet_speed(filename):
                                      f"Ping: [bold magenta]{ping:.2f} ms[/bold magenta]", justify="center")
         
         console.print(Panel(results_text, title="[bold]Speed Test Results[/bold]"))
-
-        if run_ai:
-            with console.status("[bold cyan]Getting AI optimization suggestions...[/bold cyan]", spinner="dots"):
-                suggestions = get_ai_response(
-                    system_message="You are a helpful assistant that provides internet optimization tips.",
-                    user_prompt=f"My internet speed is {download_speed:.2f} Mbps download, {upload_speed:.2f} Mbps upload, and {ping:.2f} ms ping. First, evaluate if the connection is good or not. Second, What are some suggestions to optimize my internet connection? Give me 2 concise suggestions."
-                )
-            
-            if suggestions:
-                console.print(Panel(Markdown(suggestions), title="[bold]AI Suggestions[/bold]"))
-
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        header = ["Timestamp", "Download Speed (Mbps)", "Upload Speed (Mbps)", "Ping (ms)"]
-        data = [[now, f"{download_speed:.2f}", f"{upload_speed:.2f}", f"{ping:.2f}"]]
-        append_csv(filename, data, header=header)
+        return download_speed, upload_speed, ping
 
     except speedtest.SpeedtestException as e:
         console.print(Panel(f"An error occurred during the speed test: {e}\nPlease check your internet connection and try again.", title="[bold red]Speed Test Error[/bold red]"))
     except Exception as e:
         console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"))
+
+    return None
+
+def log_speed_result(filename, download_speed, upload_speed, ping):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data = [[now, f"{download_speed:.2f}", f"{upload_speed:.2f}", f"{ping:.2f}"]]
+    append_csv(filename, data, header=SPEED_LOG_HEADER)
+
+def test_internet_speed(filename):
+    display_ip_details()
+
+    # Prompt user for AI diagnosis choice
+    run_ai = Confirm.ask("Would you like to get an AI diagnosis after the test?", default=True)
+
+    result = run_speed_test()
+    if not result:
+        return
+
+    download_speed, upload_speed, ping = result
+
+    if run_ai:
+        with console.status("[bold cyan]Getting AI optimization suggestions...[/bold cyan]", spinner="dots"):
+            suggestions = get_ai_response(
+                system_message="You are a helpful assistant that provides internet optimization tips.",
+                user_prompt=f"My internet speed is {download_speed:.2f} Mbps download, {upload_speed:.2f} Mbps upload, and {ping:.2f} ms ping. First, evaluate if the connection is good or not. Second, What are some suggestions to optimize my internet connection? Give me 2 concise suggestions."
+            )
+        
+        if suggestions:
+            console.print(Panel(Markdown(suggestions), title="[bold]AI Suggestions[/bold]"))
+
+    log_speed_result(filename, download_speed, upload_speed, ping)
+
+def monitor_internet_speed(filename):
+    """Runs speed tests every 10 minutes for up to an hour, logging each result."""
+    display_ip_details()
+    console.print(
+        Panel(
+            f"Monitoring will run up to {MONITOR_MAX_TESTS} tests, "
+            f"one every {MONITOR_INTERVAL_MINUTES} minutes. Results are logged to {filename}.",
+            title="[bold]Speed Monitor[/bold]",
+        )
+    )
+
+    for test_number in range(1, MONITOR_MAX_TESTS + 1):
+        console.print(f"\n[bold cyan]Monitor test {test_number} of {MONITOR_MAX_TESTS}[/bold cyan]")
+        result = run_speed_test()
+
+        if result:
+            download_speed, upload_speed, ping = result
+            log_speed_result(filename, download_speed, upload_speed, ping)
+            console.print(f"[green]Logged result to {filename}[/green]")
+
+        if test_number == MONITOR_MAX_TESTS:
+            break
+
+        if not Confirm.ask(f"Continue monitoring? Next test starts in {MONITOR_INTERVAL_MINUTES} minutes.", default=True):
+            console.print("[yellow]Monitoring stopped by user.[/yellow]")
+            return
+
+        console.print(f"[cyan]Waiting {MONITOR_INTERVAL_MINUTES} minutes before the next test...[/cyan]")
+        sleep(MONITOR_INTERVAL_MINUTES * 60)
+
+    console.print("[bold green]Monitoring complete.[/bold green]")
 
 def show_history(filename):
     """Reads the network log and displays a historical graph of speeds using Rich."""
@@ -162,10 +209,13 @@ if __name__ == "__main__":
 
         parser = argparse.ArgumentParser(description="Test internet speed and get AI optimization suggestions.")
         parser.add_argument("--history", action="store_true", help="Show a graph of historical speed data.")
+        parser.add_argument("--monitor", action="store_true", help="Run a speed test every 10 minutes for up to an hour.")
         args = parser.parse_args()
 
         if args.history:
             show_history(network_log)
+        elif args.monitor:
+            monitor_internet_speed(network_log)
         else:
             test_internet_speed(network_log)
     except KeyboardInterrupt:
