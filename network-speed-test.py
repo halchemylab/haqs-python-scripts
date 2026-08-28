@@ -65,6 +65,15 @@ def run_speed_test():
     )
 
     try:
+        if not hasattr(speedtest, "Speedtest"):
+            raise RuntimeError(
+                "The installed 'speedtest' module is incompatible. This script requires "
+                "the 'speedtest-cli' package. Remove the conflicting 'speedtest' package "
+                "and reinstall the dependencies with:\n"
+                f"  {sys.executable} -m pip uninstall speedtest\n"
+                f"  {sys.executable} -m pip install --upgrade --force-reinstall speedtest-cli"
+            )
+
         with Live(progress, console=console, screen=False, refresh_per_second=10) as live:
             task = progress.add_task("Running Tests", total=100)
             
@@ -86,10 +95,14 @@ def run_speed_test():
         console.print(Panel(results_text, title="[bold]Speed Test Results[/bold]"))
         return download_speed, upload_speed, ping
 
-    except speedtest.SpeedtestException as e:
-        console.print(Panel(f"An error occurred during the speed test: {e}\nPlease check your internet connection and try again.", title="[bold red]Speed Test Error[/bold red]"))
     except Exception as e:
-        console.print(Panel(f"An unexpected error occurred: {e}", title="[bold red]Error[/bold red]"))
+        console.print(
+            Panel(
+                f"An error occurred during the speed test: {e}\n"
+                "Please check your internet connection and try again.",
+                title="[bold red]Speed Test Error[/bold red]",
+            )
+        )
 
     return None
 
