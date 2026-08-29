@@ -72,13 +72,17 @@ def main():
         with console.status("[bold yellow]Drawing cards...[/bold yellow]") as status:
             for i in range(3):
                 time.sleep(1.5)
-                card = random.choice([c for c in tarot_cards if c not in drawn_cards])
-                drawn_cards.append(card)
+                card = random.choice([c for c in tarot_cards if c not in [drawn_card["name"] for drawn_card in drawn_cards]])
+                orientation = random.choice(["upright", "reversed"])
+                drawn_cards.append({"name": card, "orientation": orientation})
                 status.update(f"[bold yellow]Drawing cards... ({i+1}/3)[/bold yellow]")
         
         card_titles = ["1st Card", "2nd Card", "3rd Card"]
         for i, card in enumerate(drawn_cards):
-            console.print(Panel(Text(f"- {card}", justify="center"), title=f"[bold yellow]{card_titles[i]}[/bold yellow]"))
+            card_label = card["name"]
+            if card["orientation"] == "reversed":
+                card_label += " (reversed)"
+            console.print(Panel(Text(f"- {card_label}", justify="center"), title=f"[bold yellow]{card_titles[i]}[/bold yellow]"))
             time.sleep(1)
 
         interpret_msg, consult_msg = get_progress_pair()
@@ -88,9 +92,13 @@ def main():
         time.sleep(1)
 
         with console.status("[bold blue]Consulting the spirits...[/bold blue]"):
+            card_summary = ", ".join(
+                f"{card['name']} ({card['orientation']})"
+                for card in drawn_cards
+            )
             reading = get_ai_response(
-                system_message="You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Focus specifically on answering the user's question using the symbolism of the drawn cards. Provide interpretations that are both meaningful and practical. In 3 sentences or less.",
-                user_prompt=f"I have drawn the following tarot cards: {', '.join(drawn_cards)}. The focus question is: '{selected_question}'. Please provide a fun, insightful, and easy-to-understand tarot reading that interprets these cards.",
+                system_message="You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Focus specifically on answering the user's question using the symbolism and orientation of the drawn cards. Provide interpretations that are both meaningful and practical. In 3 sentences or less.",
+                user_prompt=f"I have drawn the following tarot cards: {card_summary}. The focus question is: '{selected_question}'. Please provide a fun, insightful, and easy-to-understand tarot reading that interprets these cards, including whether each card is upright or reversed.",
                 display_errors=False
             )
         
