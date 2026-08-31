@@ -1,0 +1,90 @@
+{
+  "The Fool": {
+    "upright": "New beginnings, openness, spontaneity, and a willing step into the unknown.",
+    "reversed": "Hesitation, recklessness, or a need to look before taking the next leap."
+  },
+  "The Magician": {
+    "upright": "Focused will, resourcefulness, skill, and the power to turn an idea into action.",
+    "reversed": "Scattered energy, unused talents, manipulation, or intentions that need clarity."
+  },
+  "The High Priestess": {
+    "upright": "Intuition, inner knowing, mystery, and wisdom found through quiet reflection.",
+    "reversed": "Ignoring intuition, hidden information, inner confusion, or disconnection from oneself."
+  },
+  "The Empress": {
+    "upright": "Nurturing growth, creativity, abundance, comfort, and connection with the senses.",
+    "reversed": "Creative blocks, overgiving, dependence, or a need for better self-care."
+  },
+  "The Emperor": {
+    "upright": "Structure, stability, leadership, boundaries, and responsible use of authority.",
+    "reversed": "Rigidity, excessive control, weak boundaries, or conflict with authority."
+  },
+  "The Hierophant": {
+    "upright": "Tradition, shared values, trusted teaching, and learning within an established path.",
+    "reversed": "Questioning convention, personal beliefs, nonconformity, or outdated rules."
+  },
+  "The Lovers": {
+    "upright": "Alignment, meaningful connection, mutual choice, and decisions guided by values.",
+    "reversed": "Disharmony, misaligned values, imbalance, or a difficult relationship choice."
+  },
+  "The Chariot": {
+    "upright": "Determination, self-direction, disciplined momentum, and progress through opposing forces.",
+    "reversed": "Loss of direction, stalled momentum, aggression, or a need to regain self-control."
+  },
+  "Strength": {
+    "upright": "Courage, patience, compassion, and calm inner strength rather than force.",
+    "reversed": "Self-doubt, depleted confidence, raw emotion, or forgotten inner resilience."
+  },
+  "The Hermit": {
+    "upright": "Solitude, introspection, careful guidance, and seeking truth within.",
+    "reversed": "Isolation, withdrawal, loneliness, or avoiding needed reflection."
+  },
+  "Wheel of Fortune": {
+    "upright": "A turning point, changing cycles, opportunity, and movement beyond complete control.",
+    "reversed": "Resistance to change, a difficult cycle, delays, or lessons repeating until addressed."
+  },
+  "Justice": {
+    "upright": "Fairness, truth, accountability, balance, and accepting the results of choices.",
+    "reversed": "Unfairness, avoidance of accountability, bias, or a truth not yet faced."
+  },
+  "The Hanged Man": {
+    "upright": "Pause, surrender, patience, and gaining insight through a changed perspective.",
+    "reversed": "Stalling, needless sacrifice, resistance, or delay without a new point of view."
+  },
+  "Death": {
+    "upright": "Necessary ending, release, deep transition, and space for renewal.",
+    "reversed": "Fear of change, clinging to the past, or a transformation being postponed."
+  },
+  "Temperance": {
+    "upright": "Balance, moderation, healing, patience, and blending different elements harmoniously.",
+    "reversed": "Excess, imbalance, impatience, or parts of life that need reintegration."
+  },
+  "The Devil": {
+    "upright": "Attachment, temptation, limiting patterns, and recognizing where choice feels constrained.",
+    "reversed": "Breaking unhealthy bonds, reclaiming agency, or beginning to confront a limiting pattern."
+  },
+  "The Tower": {
+    "upright": "Sudden disruption, revelation, and the collapse of an unstable structure.",
+    "reversed": "Avoiding necessary change, private upheaval, or rebuilding after a narrowly escaped crisis."
+  },
+  "The Star": {
+    "upright": "Hope, renewal, inspiration, authenticity, and trust in gradual healing.",
+    "reversed": "Discouragement, lost faith, disconnection, or difficulty seeing reasons for hope."
+  },
+  "The Moon": {
+    "upright": "Uncertainty, dreams, intuition, and navigating what is not yet fully visible.",
+    "reversed": "Confusion beginning to clear, exposed fears, or persistent self-deception."
+  },
+  "The Sun": {
+    "upright": "Joy, clarity, vitality, confidence, and success that can be openly shared.",
+    "reversed": "Temporary gloom, muted optimism, unrealistic positivity, or delayed happiness."
+  },
+  "Judgement": {
+    "upright": "Awakening, honest self-review, forgiveness, and answering a meaningful call.",
+    "reversed": "Harsh self-judgment, avoidance, doubt, or refusing an important lesson."
+  },
+  "The World": {
+    "upright": "Completion, integration, accomplishment, and readiness for the next cycle.",
+    "reversed": "Unfinished business, delayed closure, shortcuts, or one final step still needed."
+  }
+}

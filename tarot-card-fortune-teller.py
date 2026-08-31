@@ -1,13 +1,17 @@
+import json
 import random
-import os
 import time
+from pathlib import Path
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
-from rich.status import Status
+
 from utils.ai_helper import get_ai_response
 
 console = Console()
+
+CARD_MEANINGS_PATH = Path(__file__).with_name("tarot-card-meanings.json")
 
 tarot_cards = [
     "The Fool", "The Magician", "The High Priestess", "The Empress", "The Emperor",
@@ -45,6 +49,40 @@ ORIGINAL_PROGRESS_PAIRS = [
 ]
 progress_pairs = ORIGINAL_PROGRESS_PAIRS.copy()
 
+
+def load_card_meanings():
+    """Load and validate the local Major Arcana meaning reference."""
+    with CARD_MEANINGS_PATH.open(encoding="utf-8") as meanings_file:
+        meanings = json.load(meanings_file)
+
+    missing_cards = [card for card in tarot_cards if card not in meanings]
+    incomplete_cards = [
+        card
+        for card in tarot_cards
+        if card in meanings
+        and not all(orientation in meanings[card] for orientation in ("upright", "reversed"))
+    ]
+    if missing_cards or incomplete_cards:
+        problems = []
+        if missing_cards:
+            problems.append(f"missing cards: {', '.join(missing_cards)}")
+        if incomplete_cards:
+            problems.append(f"missing orientations: {', '.join(incomplete_cards)}")
+        raise ValueError(f"Invalid tarot meaning data ({'; '.join(problems)})")
+
+    return meanings
+
+
+def format_meaning_reference(drawn_cards, meanings):
+    """Format only the drawn cards' local meanings for the AI prompt."""
+    lines = []
+    for position, card in zip(SPREAD_POSITIONS, drawn_cards):
+        meaning = meanings[card["name"]][card["orientation"]]
+        lines.append(
+            f"- {position} — {card['name']} ({card['orientation']}): {meaning}"
+        )
+    return "\n".join(lines)
+
 def get_progress_pair():
     """Return a random progress pair and remove it from the global list."""
     global progress_pairs
@@ -55,6 +93,7 @@ def get_progress_pair():
     return pair
 
 def main():
+    card_meanings = load_card_meanings()
     console.print(Panel(Text("Welcome to the Terminal Tarot Reading App!", justify="center"), title="[bold magenta]Tarot Reader[/bold magenta]"))
     while True:
         sample_questions = random.sample(questions, 3)
@@ -97,9 +136,11 @@ def main():
                 f"{position}: {card['name']} ({card['orientation']})"
                 for position, card in zip(SPREAD_POSITIONS, drawn_cards)
             )
+            meaning_reference = format_meaning_reference(drawn_cards, card_meanings)
             reading = get_ai_response(
-                system_message="You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Focus specifically on answering the user's question using the symbolism and orientation of the drawn cards. Provide interpretations that are both meaningful and practical. In 3 sentences or less.",
-                user_prompt=f"I have drawn the following three-card Past / Present / Future tarot spread: {card_summary}. The focus question is: '{selected_question}'. Please provide a fun, insightful, and easy-to-understand tarot reading that interprets each card according to its spread position, including whether each card is upright or reversed.",
+                system_message="You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Treat the supplied local card meanings as the canonical interpretation guide. Connect them to the user's question and spread positions without contradicting them. Provide meaningful, practical guidance in 3 sentences or less.",
+                user_prompt=f"I have drawn the following three-card Past / Present / Future tarot spread: {card_summary}. The focus question is: '{selected_question}'.\n\nLocal meaning reference:\n{meaning_reference}\n\nPlease provide a fun, insightful, and easy-to-understand tarot reading. Interpret each card in its spread position and orientation.",
+                temperature=0.4,
                 display_errors=False
             )
         
