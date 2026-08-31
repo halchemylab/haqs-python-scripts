@@ -138,8 +138,8 @@ def main():
             )
             meaning_reference = format_meaning_reference(drawn_cards, card_meanings)
             reading = get_ai_response(
-                system_message="You are a tarot card reader that provides supportive, concise, and easy-to-understand readings. Treat the supplied local card meanings as the canonical interpretation guide. Connect them to the user's question and spread positions without contradicting them. Provide meaningful, practical guidance in 3 sentences or less.",
-                user_prompt=f"I have drawn the following three-card Past / Present / Future tarot spread: {card_summary}. The focus question is: '{selected_question}'.\n\nLocal meaning reference:\n{meaning_reference}\n\nPlease provide a fun, insightful, and easy-to-understand tarot reading. Interpret each card in its spread position and orientation.",
+                system_message="You are a compassionate but candid tarot card reader. Treat the supplied local card meanings as the canonical interpretation guide and connect them to the user's question and spread positions without contradicting them. Name difficult themes clearly when the cards support them; do not soften every warning into generic growth, force a positive conclusion, or catastrophize. Present the reading as symbolic reflection rather than certain prediction, and offer practical guidance grounded in what the user can observe or influence. Use clear, direct language in 3 sentences or less.",
+                user_prompt=f"I have drawn the following three-card Past / Present / Future tarot spread: {card_summary}. The focus question is: '{selected_question}'.\n\nLocal meaning reference:\n{meaning_reference}\n\nPlease provide an engaging, insightful, and easy-to-understand tarot reading. Interpret each card in its spread position and orientation.",
                 temperature=0.4,
                 display_errors=False
             )
