@@ -30,7 +30,17 @@ questions = [
     "How can I better connect with my intuition?",
     "What steps can I take for personal healing?",
     "What is something exciting coming my way?",
-    "How can I best prepare for the future?"
+    "How can I best prepare for the future?",
+    "What should I understand about my current life path?",
+    "Where could I use more balance in my daily life?",
+    "What lesson am I being invited to learn right now?",
+    "How can I make better use of my time and energy?",
+    "What part of myself needs more acceptance?",
+    "What hidden strength can help me through my current situation?",
+    "How can I invite more joy into my life?",
+    "What should I release to move forward with more clarity?",
+    "How can I improve my relationship with money and security?",
+    "What support or connection should I be more open to?"
 ]
 
 SPREAD_POSITIONS = ["Past", "Present", "Future"]
