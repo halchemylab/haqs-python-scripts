@@ -106,18 +106,23 @@ def main():
     card_meanings = load_card_meanings()
     console.print(Panel(Text("Welcome to the Terminal Tarot Reading App!", justify="center"), title="[bold magenta]Tarot Reader[/bold magenta]"))
     while True:
-        sample_questions = random.sample(questions, 3)
-        question_text = ""
-        for idx, q in enumerate(sample_questions, start=1):
-            question_text += f"{idx}. {q}\n"
-        
-        console.print(Panel(question_text, title="[bold cyan]Choose a Focus for Your Reading[/bold cyan]"))
-        
-        user_choice = console.input("[bold]Enter the number of your choice (1-3): [/bold]").strip()
-        if user_choice not in ["1", "2", "3"]:
-            console.print("[bold red]Invalid choice. Please select 1, 2, or 3.[/bold red]")
-            continue
-        selected_question = sample_questions[int(user_choice)-1]
+        selected_question = None
+        while selected_question is None:
+            sample_questions = random.sample(questions, 3)
+            question_text = ""
+            for idx, q in enumerate(sample_questions, start=1):
+                question_text += f"{idx}. {q}\n"
+            question_text += "R. Refresh suggestions"
+
+            console.print(Panel(question_text, title="[bold cyan]Choose a Focus for Your Reading[/bold cyan]"))
+
+            user_choice = console.input("[bold]Enter the number of your choice (1-3), or R to refresh: [/bold]").strip().lower()
+            if user_choice == "r":
+                continue
+            if user_choice not in ["1", "2", "3"]:
+                console.print("[bold red]Invalid choice. Please select 1, 2, 3, or R.[/bold red]")
+                continue
+            selected_question = sample_questions[int(user_choice)-1]
 
         drawn_cards = []
         with console.status("[bold yellow]Drawing cards...[/bold yellow]") as status:
