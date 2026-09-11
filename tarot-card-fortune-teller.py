@@ -11,7 +11,7 @@ from utils.ai_helper import get_ai_response
 
 console = Console()
 
-CARD_MEANINGS_PATH = Path(__file__).with_name("tarot-card-meanings.json")
+CARD_MEANINGS_PATH = Path(__file__).with_name("data") / "tarot-card-meanings.json"
 TONE_GUIDANCE = (
     "You are a warm, thoughtful tarot card reader with a neutral-constructive tone. "
     "Treat the supplied local card meanings as the canonical interpretation guide and "
