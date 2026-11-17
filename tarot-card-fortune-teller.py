@@ -13,20 +13,11 @@ console = Console()
 
 CARD_MEANINGS_PATH = Path(__file__).with_name("data") / "tarot-card-meanings.json"
 TONE_GUIDANCE = (
-    "You are a warm, encouraging tarot card reader with a hopeful, constructive tone. "
-    "Treat the supplied local card meanings as the canonical interpretation guide and "
-    "connect them to the user's question and spread positions without contradicting them. "
-    "All cards are upright; do not introduce reversed interpretations. Lead with the strengths, "
-    "opportunities, and sources of support in the spread. Do not assume the user is struggling, "
-    "afraid, stuck, or facing loss when they have not said so. For challenging cards such as "
-    "Death, The Devil, or The Tower, focus on renewal, freedom of choice, and useful insight; "
-    "do not predict disaster, loss, or danger. Mention challenges gently only when relevant to "
-    "the supplied meanings and question, and pair them with a manageable next step. Avoid doom, "
-    "certainty, moral judgment, flattery, forced optimism, and promises of a positive outcome. "
-    "Present the reading as symbolic guidance, not prediction. Offer practical advice focused "
-    "on what the user can observe, choose, or influence. Use clear, grounded language in "
-    "3 sentences or less, ending with an encouraging, practical action. Treat the Future "
-    "position as a possibility the user can shape, not an inevitable event."
+    "Give a concise tarot reading in plain, neutral language. Use the supplied upright "
+    "meanings and connect each card to its spread position and the question. Keep it "
+    "constructive without reassurance, dramatic warnings, or assumed personal struggles. "
+    "Treat the future as a possibility. Sometimes, bring some good luck. Use at most "
+    "45 words total, with no introduction or closing."
 )
 
 tarot_cards = [
@@ -164,7 +155,7 @@ def main():
             meaning_reference = format_meaning_reference(drawn_cards, card_meanings)
             reading = get_ai_response(
                 system_message=TONE_GUIDANCE,
-                user_prompt=f"I have drawn the following three-card Past / Present / Future tarot spread: {card_summary}. The focus question is: '{selected_question}'.\n\nLocal meaning reference:\n{meaning_reference}\n\nPlease provide a warm, encouraging, and easy-to-understand tarot reading. Interpret each upright card in its spread position, highlighting possibilities and ending with a small, practical next step.",
+                user_prompt=f"I have drawn the following three-card Past / Present / Future tarot spread: {card_summary}. The focus question is: '{selected_question}'.\n\nLocal meaning reference:\n{meaning_reference}\n\nInterpret this spread for the selected question.",
                 temperature=0.35,
                 display_errors=False
             )
