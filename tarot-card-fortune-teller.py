@@ -13,16 +13,20 @@ console = Console()
 
 CARD_MEANINGS_PATH = Path(__file__).with_name("data") / "tarot-card-meanings.json"
 TONE_GUIDANCE = (
-    "You are a warm, thoughtful tarot card reader with a neutral-constructive tone. "
+    "You are a warm, encouraging tarot card reader with a hopeful, constructive tone. "
     "Treat the supplied local card meanings as the canonical interpretation guide and "
     "connect them to the user's question and spread positions without contradicting them. "
-    "Keep the reading balanced with a slight positive lean: name tensions plainly, then "
-    "emphasize agency, context, and the next workable step. Avoid doom, certainty, "
-    "moral judgment, flattery, forced optimism, and telling the user what they want to hear. "
-    "If challenging themes appear, frame them as areas for reflection rather than fixed outcomes. "
+    "All cards are upright; do not introduce reversed interpretations. Lead with the strengths, "
+    "opportunities, and sources of support in the spread. Do not assume the user is struggling, "
+    "afraid, stuck, or facing loss when they have not said so. For challenging cards such as "
+    "Death, The Devil, or The Tower, focus on renewal, freedom of choice, and useful insight; "
+    "do not predict disaster, loss, or danger. Mention challenges gently only when relevant to "
+    "the supplied meanings and question, and pair them with a manageable next step. Avoid doom, "
+    "certainty, moral judgment, flattery, forced optimism, and promises of a positive outcome. "
     "Present the reading as symbolic guidance, not prediction. Offer practical advice focused "
     "on what the user can observe, choose, or influence. Use clear, grounded language in "
-    "3 sentences or less."
+    "3 sentences or less, ending with an encouraging, practical action. Treat the Future "
+    "position as a possibility the user can shape, not an inevitable event."
 )
 
 tarot_cards = [
@@ -82,14 +86,14 @@ def load_card_meanings():
         card
         for card in tarot_cards
         if card in meanings
-        and not all(orientation in meanings[card] for orientation in ("upright", "reversed"))
+        and "upright" not in meanings[card]
     ]
     if missing_cards or incomplete_cards:
         problems = []
         if missing_cards:
             problems.append(f"missing cards: {', '.join(missing_cards)}")
         if incomplete_cards:
-            problems.append(f"missing orientations: {', '.join(incomplete_cards)}")
+            problems.append(f"missing upright meanings: {', '.join(incomplete_cards)}")
         raise ValueError(f"Invalid tarot meaning data ({'; '.join(problems)})")
 
     return meanings
@@ -99,9 +103,9 @@ def format_meaning_reference(drawn_cards, meanings):
     """Format only the drawn cards' local meanings for the AI prompt."""
     lines = []
     for position, card in zip(SPREAD_POSITIONS, drawn_cards):
-        meaning = meanings[card["name"]][card["orientation"]]
+        meaning = meanings[card]["upright"]
         lines.append(
-            f"- {position} — {card['name']} ({card['orientation']}): {meaning}"
+            f"- {position} — {card} (upright): {meaning}"
         )
     return "\n".join(lines)
 
@@ -136,20 +140,14 @@ def main():
                 continue
             selected_question = sample_questions[int(user_choice)-1]
 
-        drawn_cards = []
+        drawn_cards = random.sample(tarot_cards, 3)
         with console.status("[bold yellow]Drawing cards...[/bold yellow]") as status:
             for i in range(3):
                 time.sleep(1.5)
-                card = random.choice([c for c in tarot_cards if c not in [drawn_card["name"] for drawn_card in drawn_cards]])
-                orientation = random.choice(["upright", "reversed"])
-                drawn_cards.append({"name": card, "orientation": orientation})
                 status.update(f"[bold yellow]Drawing cards... ({i+1}/3)[/bold yellow]")
         
         for i, card in enumerate(drawn_cards):
-            card_label = card["name"]
-            if card["orientation"] == "reversed":
-                card_label += " (reversed)"
-            console.print(Panel(Text(f"- {card_label}", justify="center"), title=f"[bold yellow]{SPREAD_POSITIONS[i]}[/bold yellow]"))
+            console.print(Panel(Text(f"- {card}", justify="center"), title=f"[bold yellow]{SPREAD_POSITIONS[i]}[/bold yellow]"))
             time.sleep(1)
 
         interpret_msg, consult_msg = get_progress_pair()
@@ -160,13 +158,13 @@ def main():
 
         with console.status("[bold blue]Consulting the spirits...[/bold blue]"):
             card_summary = ", ".join(
-                f"{position}: {card['name']} ({card['orientation']})"
+                f"{position}: {card} (upright)"
                 for position, card in zip(SPREAD_POSITIONS, drawn_cards)
             )
             meaning_reference = format_meaning_reference(drawn_cards, card_meanings)
             reading = get_ai_response(
                 system_message=TONE_GUIDANCE,
-                user_prompt=f"I have drawn the following three-card Past / Present / Future tarot spread: {card_summary}. The focus question is: '{selected_question}'.\n\nLocal meaning reference:\n{meaning_reference}\n\nPlease provide an engaging, insightful, and easy-to-understand tarot reading. Interpret each card in its spread position and orientation.",
+                user_prompt=f"I have drawn the following three-card Past / Present / Future tarot spread: {card_summary}. The focus question is: '{selected_question}'.\n\nLocal meaning reference:\n{meaning_reference}\n\nPlease provide a warm, encouraging, and easy-to-understand tarot reading. Interpret each upright card in its spread position, highlighting possibilities and ending with a small, practical next step.",
                 temperature=0.35,
                 display_errors=False
             )
